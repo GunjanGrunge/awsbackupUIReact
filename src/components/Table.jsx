@@ -1,0 +1,9 @@
+// ...existing code...
+return (
+  <div className="table-container">
+    <table>
+      // ...existing table code...
+    </table>
+  </div>
+);
+// ...existing code...
