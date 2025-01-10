@@ -38,6 +38,7 @@
   transition: all 0.3s ease;
   border-radius: 8px;
   font-weight: 500;
+  position: relative;
 }
 
 .nav-link-custom:hover {
@@ -49,6 +50,14 @@
   background: #edf2ff;
   color: #3b82f6 !important;
   font-weight: 500;
+}
+
+.nav-link-custom:hover .nav-icon {
+  transform: translateY(-1px);
+}
+
+.nav-link-custom.active .nav-icon {
+  color: #4f46e5;
 }
 
 .nav-icon {
@@ -333,4 +342,21 @@
   transform: scale(1.05);
 }
 
-/* ...existing code... */
+/* ...existing styles... */
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+}
+
+/* Remove the old AI analysis link styles */
+.ai-analysis-link,
+.ai-analysis-link:hover,
+.ai-analysis-link::after,
+.ai-analysis-link:hover::after {
+  display: none;
+}
+
+/* ...existing styles... */

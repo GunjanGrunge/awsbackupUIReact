@@ -17,6 +17,8 @@ import './App.css';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Footer from './components/Footer';
+import AIAnalysis from './pages/AIAnalysis';
+import AdminRoute from './components/AdminRoute';
 
 function App() {
   return (
@@ -37,6 +39,16 @@ function App() {
                         <Route path="/folder" element={<Folder />} />
                         <Route path="/history" element={<History />} />
                         <Route path="/cost" element={<Cost />} />
+                        <Route 
+                          path="/ai-analysis" 
+                          element={
+                            <PrivateRoute>
+                              <AdminRoute>
+                                <AIAnalysis />
+                              </AdminRoute>
+                            </PrivateRoute>
+                          } 
+                        />
                       </Routes>
                     </main>
                     <Footer />

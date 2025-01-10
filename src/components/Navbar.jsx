@@ -1,7 +1,7 @@
 import { Navbar, Nav, Container, Dropdown, DropdownButton } from 'react-bootstrap';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaUser, FaHome, FaFolder, FaHistory, FaCog, FaSignOutAlt, FaKey, FaMoneyBillWave } from 'react-icons/fa';
+import { FaUser, FaHome, FaFolder, FaHistory, FaCog, FaSignOutAlt, FaKey, FaMoneyBillWave, FaRobot } from 'react-icons/fa';
 import { useState } from 'react';
 import ProfileModal from './ProfileModal';
 import awsLogo from '../images/aws-s3.png';
@@ -15,6 +15,9 @@ function NavigationBar() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const { showToast } = useToast();
   const [expanded, setExpanded] = useState(false);
+
+  const adminEmail = "stdevilgunjan@gmail.com";
+  const isAdmin = currentUser?.email === adminEmail;
 
   const handleLogout = async () => {
     try {
@@ -62,7 +65,8 @@ function NavigationBar() {
                 { path: '/', icon: FaHome, label: 'Home' },
                 { path: '/folder', icon: FaFolder, label: 'Folders' },
                 { path: '/history', icon: FaHistory, label: 'Activity' },
-                { path: '/cost', icon: FaMoneyBillWave, label: 'Cost' }
+                { path: '/cost', icon: FaMoneyBillWave, label: 'Cost' },
+                ...(isAdmin ? [{ path: '/ai-analysis', icon: FaRobot, label: '' }] : [])
               ].map(({ path, icon: Icon, label }) => (
                 <Nav.Link
                   key={path}
@@ -77,7 +81,7 @@ function NavigationBar() {
               ))}
             </Nav>
             
-            <div className="ms-auto d-flex align-items-center">
+            <div className="nav-actions">
               <DropdownButton
                 id="user-dropdown"
                 title={

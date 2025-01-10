@@ -1,0 +1,372 @@
+.ai-analysis-page {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 64px auto 0;
+}
+
+.ai-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.ai-icon {
+  font-size: 3rem;
+  color: #6366f1;
+  margin-bottom: 1rem;
+}
+
+.analysis-container {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.upload-section {
+  text-align: center;
+  padding: 2rem;
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  cursor: pointer;
+  color: #4b5563;
+}
+
+.file-count {
+  font-size: 0.9rem;
+  color: #6366f1;
+}
+
+.analyze-button {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  background: #6366f1;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.analyze-button:hover:not(:disabled) {
+  background: #4f46e5;
+  transform: translateY(-1px);
+}
+
+.analyze-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.analysis-results {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.results-content {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+}
+
+.results-content pre {
+  white-space: pre-wrap;
+  font-family: inherit;
+  margin: 0;
+  padding: 0;
+  color: #1f2937;
+  line-height: 1.6;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+}
+
+.analysis-section {
+  margin-bottom: 2rem;
+}
+
+/* Add styling for markdown elements */
+.results-content h1, 
+.results-content h2, 
+.results-content h3 {
+  color: #1a1f36;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.results-content ul,
+.results-content ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.results-content p {
+  margin-bottom: 1rem;
+}
+
+/* ...existing styles... */
+
+.analysis-wrapper {
+  position: relative;
+}
+
+.analysis-actions {
+  position: sticky;
+  top: 0;
+  background: white;
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  z-index: 10;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.download-report-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.download-report-btn:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.analysis-content {
+  padding: 2rem;
+}
+
+/* Enhanced markdown styling */
+.analysis-content h1 {
+  color: #1a1f36;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.analysis-content h2 {
+  color: #2d3748;
+  font-size: 1.5rem;
+  margin: 2rem 0 1rem;
+}
+
+.analysis-content h3 {
+  color: #4a5568;
+  font-size: 1.25rem;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.analysis-content ul, 
+.analysis-content ol {
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.analysis-content li {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.analysis-content p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+  color: #4b5563;
+}
+
+.analysis-content blockquote {
+  border-left: 4px solid #3b82f6;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: #4a5568;
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 0 8px 8px 0;
+}
+
+.analysis-content code {
+  background: #f1f5f9;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: #2563eb;
+}
+
+/* PDF specific styles */
+.pdf-container {
+  padding: 2rem;
+  font-family: 'Arial', sans-serif;
+}
+
+.pdf-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.pdf-logo {
+  height: 50px;
+  margin-bottom: 1rem;
+  object-fit: contain;
+}
+
+.pdf-footer {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 2px solid #e2e8f0;
+  color: #64748b;
+  font-size: 10px;
+}
+
+/* Responsive tables */
+.analysis-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.analysis-content th,
+.analysis-content td {
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+}
+
+.analysis-content th {
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+/* Charts and metrics styling */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.metric-card {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.metric-title {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a1f36;
+}
+
+/* ...existing styles... */
+
+.pdf-container {
+  padding: 2rem;
+  font-family: 'Arial', sans-serif;
+}
+
+.pdf-header {
+  margin-bottom: 3rem;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  border-bottom: 3px solid #232f3e;
+  padding-bottom: 1rem;
+}
+
+.pdf-logo {
+  height: 50px;
+  object-fit: contain;
+}
+
+.header-text h1 {
+  color: #232f3e;
+  font-size: 24px;
+  margin: 0;
+}
+
+.report-meta {
+  color: #666;
+  font-size: 14px;
+  margin-top: 0.5rem;
+}
+
+.pdf-body {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.pdf-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 2px solid #e2e8f0;
+  font-size: 10px;
+  color: #666;
+  text-align: center;
+}
+
+/* Enhanced markdown styling for PDF */
+.analysis-content h1 {
+  color: #232f3e;
+  font-size: 20px;
+  margin: 2rem 0 1rem;
+}
+
+.analysis-content h2 {
+  color: #2b6cb0;
+  font-size: 16px;
+  margin: 1.5rem 0 1rem;
+}
+
+/* ...rest of existing styles... */

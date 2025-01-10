@@ -1,18 +1,29 @@
 import { useCallback, useState, useEffect } from 'react';
-import { FaCloudUploadAlt, FaFile, FaTrash, FaEye, FaCheckCircle, FaTrashAlt } from 'react-icons/fa';
+import { 
+  FaCloudUploadAlt, 
+  FaFile, 
+  FaTrash, 
+  FaEye, 
+  FaCheckCircle, 
+  FaTrashAlt, 
+  FaRobot 
+} from 'react-icons/fa';
 import { useDropzone } from 'react-dropzone';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { uploadToS3 } from '../services/s3Service';
 import welcomeImage from '../images/7471053.jpg';
+import { analyzeUserData } from '../services/openaiService';
 import './Home.css';
 
-const Home = () => {
+const Home = ({ initialTab }) => {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const { currentUser } = useAuth();
   const { showToast } = useToast();
   const [previews, setPreviews] = useState({});
+  const [aiAnalysis, setAiAnalysis] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     // Clean up previews when component unmounts
@@ -20,6 +31,15 @@ const Home = () => {
       Object.values(previews).forEach(preview => URL.revokeObjectURL(preview));
     };
   }, [previews]);
+
+  useEffect(() => {
+    if (initialTab === 'ai-analysis') {
+      const aiSection = document.querySelector('.ai-analysis-section');
+      if (aiSection) {
+        aiSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [initialTab]);
 
   const getFolderName = () => {
     const date = new Date();
@@ -193,6 +213,22 @@ const Home = () => {
     }
   };
 
+  const handleAnalyzeFiles = async () => {
+    if (files.length === 0) return;
+    
+    setIsAnalyzing(true);
+    try {
+      const analysis = await analyzeFiles(files);
+      setAiAnalysis(analysis);
+      showToast('Analysis complete!', 'success');
+    } catch (error) {
+      console.error('Analysis error:', error);
+      showToast('Failed to analyze files', 'error');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   return (
     <div className="page-container">
       {/* Add this div for reCAPTCHA */}
@@ -289,6 +325,35 @@ const Home = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              <div className="ai-analysis-section">
+                <button 
+                  className="analyze-button"
+                  onClick={handleAnalyzeFiles}
+                  disabled={isAnalyzing || uploading}
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <span className="spinner-border" />
+                      <span>Analyzing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaRobot size={20} />
+                      <span>Analyze with AI</span>
+                    </>
+                  )}
+                </button>
+                
+                {aiAnalysis && (
+                  <div className="analysis-results">
+                    <h3>AI Analysis</h3>
+                    <div className="analysis-content">
+                      <pre>{aiAnalysis}</pre>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
