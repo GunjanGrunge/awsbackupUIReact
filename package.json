@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aws-sdk/client-cost-explorer": "^3.726.0",
     "@aws-sdk/client-s3": "^3.723.0",
     "@aws-sdk/lib-storage": "^3.726.0",
     "@aws-sdk/s3-request-presigner": "^3.723.0",

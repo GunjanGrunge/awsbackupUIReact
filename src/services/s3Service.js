@@ -9,19 +9,26 @@ import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import JSZip from 'jszip';
 
+// Configure S3 client with browser-compatible settings
 const s3Client = new S3Client({
   region: import.meta.env.VITE_REGION,
   credentials: {
     accessKeyId: import.meta.env.VITE_ACCESS_KEY_ID,
     secretAccessKey: import.meta.env.VITE_SECRET_KEY,
   },
-  endpoint: `https://s3.${import.meta.env.VITE_REGION}.amazonaws.com`,
-  forcePathStyle: true,
-  signatureVersion: 'v4'
+  forcePathStyle: false,
+  // Add these settings for browser compatibility
+  systemClockOffset: 0,
+  tls: true,
+  retryMode: 'standard',
+  customUserAgent: 'AWS-S3-Browser-Upload',
+  // Remove any Node.js specific configurations
+  maxAttempts: 3,
 });
 
 const EXCLUDED_FILES = ['history-log.json'];
 
+// Update upload configuration for browser compatibility
 export const uploadToS3 = async (file, folderName) => {
   try {
     // Enhanced file validation
@@ -50,29 +57,17 @@ export const uploadToS3 = async (file, folderName) => {
         Body: fileBlob,
         ContentType: file.type || 'application/octet-stream',
       },
-      queueSize: 4,
-      partSize: 5 * 1024 * 1024,
-    });
-
-    console.log('Starting upload with params:', {
-      bucket: import.meta.env.VITE_BUCKET_NAME,
-      key,
-      fileDetails: {
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        isFile: file instanceof File,
-        isBlob: file instanceof Blob
-      }
+      queueSize: 4, // Reduced for browser
+      partSize: 5 * 1024 * 1024, // 5MB parts
+      leavePartsOnError: false, // Clean up failed uploads
     });
 
     upload.on("httpUploadProgress", (progress) => {
       const percentage = Math.round((progress.loaded / progress.total) * 100);
-      console.log(`Upload progress: ${percentage}%`);
+      // Progress can be used for UI updates if needed
     });
 
     const response = await upload.done();
-    console.log('Upload successful:', response);
 
     // Log the upload activity
     await logActivity({
@@ -84,59 +79,79 @@ export const uploadToS3 = async (file, folderName) => {
 
     return response;
   } catch (error) {
-    console.error('S3 Upload Error Details:', {
-      error,
-      errorMessage: error.message,
-      errorStack: error.stack,
-      fileDetails: file ? {
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        constructor: file.constructor?.name,
-        isFile: file instanceof File,
-        isBlob: file instanceof Blob,
-        properties: Object.keys(file)
-      } : 'No file object',
-      folderName
-    });
+    console.error('Upload error occurred');
     throw error;
   }
 };
 
 export const listS3Objects = async (prefix = '') => {
   try {
+    // Ensure prefix ends with / if it's not empty
+    const normalizedPrefix = prefix ? prefix.endsWith('/') ? prefix : `${prefix}/` : '';
+    
     const command = new ListObjectsV2Command({
       Bucket: import.meta.env.VITE_BUCKET_NAME,
-      Prefix: prefix,
+      Prefix: normalizedPrefix,
       Delimiter: '/'
     });
 
     const response = await s3Client.send(command);
     
-    const folders = (response.CommonPrefixes || []).map(prefix => ({
-      key: prefix.Prefix,
-      name: prefix.Prefix.split('/').slice(-2)[0],
-      type: 'folder',
-      lastModified: null,
-      size: null
-    }));
+    // Process folders (CommonPrefixes)
+    const folders = (response.CommonPrefixes || [])
+      .map(prefix => ({
+        key: prefix.Prefix,
+        name: prefix.Prefix.split('/').slice(-2)[0],
+        type: 'folder',
+        lastModified: null
+      }));
 
+    // Process files (Contents)
     const files = (response.Contents || [])
-      .filter(item => !EXCLUDED_FILES.includes(item.Key.split('/').pop())) // Filter out excluded files
+      .filter(item => {
+        // Filter out the current directory prefix and excluded files
+        const name = item.Key.replace(normalizedPrefix, '');
+        return name && !EXCLUDED_FILES.includes(name) && !name.endsWith('/');
+      })
       .map(item => ({
         key: item.Key,
         name: item.Key.split('/').pop(),
         type: 'file',
         lastModified: item.LastModified,
         size: item.Size
-      }))
-      .filter(item => item.name); // Filter out empty names (folder markers)
+      }));
 
-    return [...folders, ...files];
+    // Sort: folders first, then files, both alphabetically
+    return [
+      ...folders.sort((a, b) => a.name.localeCompare(b.name)),
+      ...files.sort((a, b) => a.name.localeCompare(b.name))
+    ];
   } catch (error) {
-    console.error('Error listing S3 objects:', error);
+    console.error('Error listing objects:', error);
     throw error;
   }
+};
+
+// Add new helper function to get all objects including those in subfolders
+export const getAllObjects = async (prefix = '') => {
+  const allObjects = [];
+  let continuationToken;
+
+  do {
+    const command = new ListObjectsV2Command({
+      Bucket: import.meta.env.VITE_BUCKET_NAME,
+      Prefix: prefix,
+      ContinuationToken: continuationToken
+    });
+
+    const response = await s3Client.send(command);
+    if (response.Contents) {
+      allObjects.push(...response.Contents);
+    }
+    continuationToken = response.NextContinuationToken;
+  } while (continuationToken);
+
+  return allObjects;
 };
 
 export const deleteS3Object = async (key) => {
@@ -148,7 +163,7 @@ export const deleteS3Object = async (key) => {
 
     await s3Client.send(command);
   } catch (error) {
-    console.error('Error deleting S3 object:', error);
+    console.error('Error deleting object');
     throw error;
   }
 };
@@ -186,6 +201,16 @@ export const getS3DownloadUrl = async (key, size) => {
   }
 };
 
+// Add polyfill for stream handling
+const streamToBuffer = async (stream) => {
+  const chunks = [];
+  for await (const chunk of stream) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+};
+
+// Update download handling for browser compatibility
 export const downloadFolder = async (folderKey) => {
   try {
     const command = new ListObjectsV2Command({
@@ -219,9 +244,26 @@ export const downloadFolder = async (folderKey) => {
       });
       
       const { Body } = await s3Client.send(getCommand);
-      const arrayBuffer = await Body.transformToByteArray();
+      
+      // Handle streaming in browser environment
+      let data;
+      if (Body instanceof ReadableStream) {
+        const reader = Body.getReader();
+        const chunks = [];
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+        }
+        
+        data = new Uint8Array(chunks.reduce((acc, chunk) => acc.concat(Array.from(chunk)), []));
+      } else {
+        data = await Body.transformToByteArray();
+      }
+
       const relativePath = item.Key.substring(folderKey.length);
-      zip.file(relativePath, arrayBuffer);
+      zip.file(relativePath, data);
     }
 
     const content = await zip.generateAsync({ type: 'blob' });
@@ -236,23 +278,18 @@ export const downloadFolder = async (folderKey) => {
     URL.revokeObjectURL(url);
 
   } catch (error) {
-    console.error('Error downloading folder:', error);
+    console.error('Error downloading folder');
     throw error;
   }
 };
 
 export const getFolderSize = async (folderKey) => {
   try {
-    const command = new ListObjectsV2Command({
-      Bucket: import.meta.env.VITE_BUCKET_NAME,
-      Prefix: folderKey
-    });
-
-    const response = await s3Client.send(command);
-    const totalSize = (response.Contents || []).reduce((acc, item) => acc + item.Size, 0);
+    const allObjects = await getAllObjects(folderKey);
+    const totalSize = allObjects.reduce((acc, item) => acc + item.Size, 0);
     return totalSize;
   } catch (error) {
-    console.error('Error calculating folder size:', error);
+    console.error('Error calculating folder size');
     return 0;
   }
 };
@@ -374,43 +411,117 @@ export const formatFileSize = (bytes) => {
 
 export const getBucketMetrics = async () => {
   try {
-    const command = new ListObjectsV2Command({
-      Bucket: import.meta.env.VITE_BUCKET_NAME
-    });
-
-    const response = await s3Client.send(command);
+    const items = await listS3Objects();
     
-    // Calculate total size and object count
     let totalSize = 0;
     let totalObjects = 0;
 
-    (response.Contents || []).forEach(item => {
-      if (!EXCLUDED_FILES.includes(item.Key.split('/').pop())) {
-        totalSize += item.Size;
-        totalObjects += 1;
-      }
-    });
+    const processItems = (itemsList) => {
+      itemsList.forEach(item => {
+        if (item.type === 'file' && !EXCLUDED_FILES.includes(item.name)) {
+          totalSize += item.size;
+          totalObjects += 1;
+        }
+      });
+    };
 
-    // Calculate costs (AWS S3 Standard Storage pricing)
+    processItems(items);
+
+    // Calculate estimated costs
+    const storageGB = totalSize / (1024 * 1024 * 1024);
     const storageRate = 0.023; // per GB per month
     const transferRate = 0.09; // per GB outbound
-
-    const storageGB = totalSize / (1024 * 1024 * 1024); // Convert bytes to GB
-    const storageCost = storageGB * storageRate;
-    const transferCost = storageGB * transferRate;
-    const totalCost = storageCost + transferCost;
 
     return {
       totalSize,
       totalObjects,
-      storageCost,
-      transferCost,
-      totalCost,
-      storageGB
+      storageGB,
+      storageCost: storageGB * storageRate,
+      transferCost: storageGB * transferRate * 0.1, // Assuming 10% transfer
+      totalCost: (storageGB * storageRate) + (storageGB * transferRate * 0.1)
     };
   } catch (error) {
     console.error('Error getting bucket metrics:', error);
     throw error;
   }
 };
+
+// Add this new function for AI analysis
+export const getDetailedFolderStructure = async (prefix = '') => {
+  try {
+    const allObjects = await getAllObjects(prefix);
+    const structure = {};
+    
+    for (const object of allObjects) {
+      const parts = object.Key.split('/');
+      let currentLevel = structure;
+      
+      // Process each part of the path
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        if (!part) continue;
+        
+        if (i === parts.length - 1) {
+          // This is a file
+          currentLevel[part] = {
+            type: 'file',
+            size: object.Size,
+            lastModified: object.LastModified,
+            key: object.Key
+          };
+        } else {
+          // This is a folder
+          if (!currentLevel[part]) {
+            currentLevel[part] = {
+              type: 'folder',
+              size: 0,
+              lastModified: null,
+              contents: {},
+              key: parts.slice(0, i + 1).join('/') + '/'
+            };
+          }
+          currentLevel = currentLevel[part].contents;
+        }
+      }
+    }
+
+    // Calculate folder sizes
+    const calculateFolderSizes = (folder) => {
+      let totalSize = 0;
+      
+      Object.values(folder).forEach(item => {
+        if (item.type === 'file') {
+          totalSize += item.size;
+        } else if (item.type === 'folder') {
+          item.size = calculateFolderSizes(item.contents);
+          totalSize += item.size;
+        }
+      });
+      
+      return totalSize;
+    };
+
+    calculateFolderSizes(structure);
+    return structure;
+  } catch (error) {
+    console.error('Error getting detailed folder structure:', error);
+    return {};
+  }
+};
+
+// Update vite.config.js to handle AWS SDK properly
+// Add this comment at the end of the file to remind about vite config
+/* 
+Add to vite.config.js:
+export default defineConfig({
+  resolve: {
+    alias: {
+      './runtimeConfig': './runtimeConfig.browser',
+    },
+  },
+  define: {
+    'process.env.NODE_DEBUG': JSON.stringify(''),
+  }
+})
+*/
 

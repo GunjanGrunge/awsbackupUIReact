@@ -48,12 +48,16 @@ const Folder = () => {
   };
 
   const handleNavigate = (path) => {
-    setCurrentPath(path);
+    // Ensure path ends with '/' for folders
+    const normalizedPath = path.endsWith('/') ? path : `${path}/`;
+    setCurrentPath(normalizedPath);
   };
 
   const handleBack = () => {
-    const newPath = currentPath.split('/').slice(0, -1).join('/');
-    setCurrentPath(newPath);
+    // Remove trailing slash first, then get parent path
+    const withoutTrailingSlash = currentPath.slice(0, -1);
+    const parentPath = withoutTrailingSlash.substring(0, withoutTrailingSlash.lastIndexOf('/') + 1);
+    setCurrentPath(parentPath);
   };
 
   const handleDownload = async (item) => {
@@ -84,13 +88,18 @@ const Folder = () => {
     }
   };
 
-  const breadcrumbs = [
-    { name: 'Root', path: '' },
-    ...currentPath.split('/').filter(Boolean).map((part, index, array) => ({
-      name: part,
-      path: array.slice(0, index + 1).join('/')
-    }))
-  ];
+  const getBreadcrumbItems = () => {
+    if (!currentPath) return [{ name: 'Root', path: '' }];
+
+    const parts = currentPath.split('/').filter(Boolean);
+    return [
+      { name: 'Root', path: '' },
+      ...parts.map((part, index) => ({
+        name: part,
+        path: parts.slice(0, index + 1).join('/') + '/'
+      }))
+    ];
+  };
 
   return (
     <div className="folder-container">
@@ -129,36 +138,37 @@ const Folder = () => {
             <tbody>
               {currentPath && (
                 <tr className="back-row" onClick={handleBack}>
-                  <td>
+                  <td colSpan="3">
                     <div className="d-flex align-items-center">
                       <FaArrowUp className="me-2 back-icon" />
                       <span className="back-text">Back to parent folder</span>
                     </div>
                   </td>
-                  <td>-</td>
-                  <td>-</td>
                 </tr>
               )}
               {contents.map((item) => (
-                <tr key={item.key} className={item.type === 'folder' ? 'folder-row' : 'file-row'}>
+                <tr 
+                  key={item.key} 
+                  className={item.type === 'folder' ? 'folder-row' : 'file-row'}
+                >
                   <td>
-                    {item.type === 'folder' ? (
-                      <div className="folder-name">
+                    <div 
+                      className={item.type === 'folder' ? 'folder-name' : 'file-name'}
+                      onClick={() => item.type === 'folder' && handleNavigate(item.key)}
+                    >
+                      {item.type === 'folder' ? (
                         <FaFolder className="folder-icon" />
-                        <span onClick={() => handleNavigate(item.key)}>
-                          {item.name}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="file-name">
+                      ) : (
                         <FaFile className="file-icon" />
-                        <span>{item.name}</span>
-                      </div>
-                    )}
+                      )}
+                      <span>{item.name}</span>
+                    </div>
                   </td>
                   <td>
                     {item.type === 'folder' 
-                      ? folderSizes[item.key] ? formatFileSize(folderSizes[item.key]) : 'Calculating...'
+                      ? folderSizes[item.key] 
+                        ? formatFileSize(folderSizes[item.key]) 
+                        : 'Calculating...'
                       : formatFileSize(item.size || 0)
                     }
                   </td>

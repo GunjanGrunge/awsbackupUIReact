@@ -12,9 +12,7 @@
 }
 
 .exchange-rate-alert {
-  background-color: #f0f9ff;
-  border-color: #bae6fd;
-  color: #0369a1;
+  display: none;
 }
 
 .cost-card {
@@ -155,6 +153,307 @@
   transform: translateY(-5px);
 }
 
+.cost-details-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: none;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.cost-details-card .card-header {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1.25rem 1.5rem;
+}
+
+.cost-details-card .card-header h3 {
+  color: #0f172a;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cost-details-card .card-body {
+  padding: 1.5rem;
+}
+
+.cost-breakdown-list {
+  margin: 0;
+  padding: 0;
+}
+
+.cost-breakdown-list li {
+  padding: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.2s;
+}
+
+.cost-breakdown-list li:hover {
+  background-color: #f8fafc;
+}
+
+.cost-breakdown-list li:last-child {
+  border-bottom: none;
+}
+
+.cost-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.cost-item-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #475569;
+  font-weight: 500;
+}
+
+.cost-item-value {
+  text-align: right;
+}
+
+.currency-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.currency-primary {
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.currency-secondary {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-top: 0.2rem;
+}
+
+.section-header {
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 1rem;
+}
+
+.section-header h4 {
+  color: #0f172a;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.service-charges {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.service-type {
+  padding: 1.25rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  margin-bottom: 1rem;
+}
+
+.service-type-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.total-section {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-top: 2px solid #e2e8f0;
+}
+
+.total-label {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 1.1rem;
+}
+
+.total-value {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.info-card {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.info-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.info-icon {
+  color: #3b82f6;
+  font-size: 1.25rem;
+}
+
+.rate-info {
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.metric-item {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.cost-breakdown-list {
+  list-style: none;
+  padding: 0;
+}
+
+.cost-breakdown-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+  align-items: flex-start;
+}
+
+.cost-breakdown-list .secondary-currency {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-top: 0.1rem;
+}
+
+.optimization-list {
+  list-style: none;
+  padding: 0;
+}
+
+.optimization-item {
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+  background: #f8f9fa;
+  border-left: 4px solid #007bff;
+  border-radius: 4px;
+}
+
+.total-cost {
+  border-top: 2px solid #e2e8f0;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.cost-breakdown-list li.total-cost {
+  color: #1e293b;
+}
+
+.total-cost .secondary-currency {
+  font-weight: 600;
+  color: #475569;
+}
+
+.billing-header {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.billing-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  color: white;
+}
+
+.billing-period, .billing-progress, .exchange-rate {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.info-label {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.info-value {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.progress-container {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  height: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar {
+  background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+  height: 100%;
+  border-radius: 8px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
+.currency-icon {
+  font-size: 1rem;
+  margin: 0 0.125rem;
+}
+
 @media (max-width: 768px) {
   .cost-container {
     padding: 1rem;
@@ -162,6 +461,19 @@
 
   .cost-card {
     margin-bottom: 1rem;
+  }
+
+  .billing-header {
+    padding: 1rem;
+  }
+
+  .billing-info {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .info-value {
+    font-size: 1rem;
   }
 }
 
@@ -187,4 +499,37 @@
   .welcome-title {
     font-size: 1.75rem;
   }
+}
+
+.info-list li {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.total-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e2e8f0;
+}
+
+.total-section h4 {
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+.total-amount {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1e293b;
+  text-align: right;
+}
+
+.cost-breakdown-list div {
+  text-align: right;
+}
+
+.cost-breakdown-list div > div:first-child {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-bottom: 0.2rem;
 }

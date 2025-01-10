@@ -1,47 +1,328 @@
 import React, { useState, useEffect } from 'react';
-import { FaRobot, FaSpinner, FaDownload } from 'react-icons/fa';
+import { FaRobot, FaSpinner, FaDownload, FaSync } from 'react-icons/fa';
 import { marked } from 'marked';
 import html2pdf from 'html2pdf.js';
 import { useAuth } from '../contexts/AuthContext';
 import { analyzeUserData } from '../services/openaiService';
 import { getHistoryLog } from '../services/historyService';
 import { getCostData } from '../services/costService';
-import { listS3Objects } from '../services/s3Service';
+import { 
+  listS3Objects, 
+  getFolderSize, 
+  getBucketMetrics,
+  getDetailedFolderStructure 
+} from '../services/s3Service';
 import './AIAnalysis.css';
+
+const LOADING_MESSAGES = [
+  "Analyzing your system data...",
+  "Crunching the numbers...",
+  "Scanning your data for insights...",
+  "Generating your cost analysis report...",
+  "Digging deep into your usage patterns...",
+  "Identifying potential savings...",
+  "Optimizing your data for better performance...",
+  "Uncovering hidden cost drivers...",
+  "Preparing detailed usage insights...",
+  "Finalizing your personalized recommendations...",
+  "Processing cost trends and projections...",
+  "Loading detailed service analysis...",
+  "Detecting unusual spending patterns...",
+  "Reviewing storage class performance...",
+  "Compiling resource usage statistics...",
+  "Scanning for cost optimization opportunities...",
+  "Calculating potential savings...",
+  "Aggregating billing and usage data...",
+  "Analyzing data transfer impacts...",
+  "Refining insights for maximum efficiency...",
+  "Evaluating service cost distribution...",
+  "Sorting through storage metrics...",
+  "Reviewing request activity trends...",
+  "Exploring data for optimization routes...",
+  "Assessing your cloud spending habits...",
+  "Highlighting resource inefficiencies...",
+  "Mapping out usage forecasts...",
+  "Balancing cost and performance metrics...",
+  "Discovering ways to lower expenses...",
+  "Unlocking actionable cost-saving insights...",
+  "Examining your storage usage in detail...",
+  "Checking for redundant resources...",
+  "Analyzing request frequency and cost impact...",
+  "Gathering the latest cost metrics...",
+  "Investigating underutilized resources...",
+  "Calculating storage class efficiency...",
+  "Detecting cost spikes across services...",
+  "Reviewing cross-region data transfers...",
+  "Modeling cost projections...",
+  "Filtering high-cost operations...",
+  "Optimizing data retrieval processes...",
+  "Spotting trends in service utilization...",
+  "Analyzing backup and disaster recovery costs...",
+  "Monitoring resource scalability...",
+  "Auditing recent usage anomalies...",
+  "Estimating future resource demands...",
+  "Cross-referencing billing data...",
+  "Isolating costly data transfer paths...",
+  "Scanning for outdated storage objects...",
+  "Recommending usage adjustments...",
+  "Evaluating lifecycle policy efficiency...",
+  "Sorting data by service consumption...",
+  "Reviewing multi-region storage expenses...",
+  "Assessing request latency and impact...",
+  "Processing historical cost trends...",
+  "Pinpointing high-traffic services...",
+  "Simulating cost-saving scenarios...",
+  "Tracking data growth rates...",
+  "Auditing service request volumes...",
+  "Formulating detailed optimization plans...",
+  // Additional 30 loading messages
+  "Analyzing performance bottlenecks...",
+  "Calculating optimal storage configurations...",
+  "Reviewing access patterns for improvements...",
+  "Detecting idle resources for cleanup...",
+  "Measuring cost impact by region...",
+  "Optimizing storage lifecycle rules...",
+  "Breaking down data transfer costs...",
+  "Reviewing historical usage spikes...",
+  "Calculating projected monthly expenses...",
+  "Auditing storage permissions for security...",
+  "Prioritizing high-impact optimizations...",
+  "Simplifying complex cost structures...",
+  "Assessing object storage distribution...",
+  "Identifying unused or forgotten services...",
+  "Balancing storage performance and cost...",
+  "Reviewing data redundancy levels...",
+  "Forecasting upcoming resource demands...",
+  "Detecting overprovisioned resources...",
+  "Evaluating cost anomalies across accounts...",
+  "Uncovering inefficient workflows...",
+  "Adjusting cost models for accuracy...",
+  "Scanning service logs for insights...",
+  "Segmenting costs by department or team...",
+  "Aligning storage strategies with budgets...",
+  "Reviewing API request efficiency...",
+  "Comparing actual vs. forecasted usage...",
+  "Highlighting peak usage periods...",
+  "Auditing multi-account cost allocation...",
+  "Consolidating resource usage reports...",
+  "Generating tailored optimization tips..."
+];
+
+
+
+const groupByTimeFrame = (data, timeFrame) => {
+  const grouped = {};
+  data.forEach(entry => {
+    const date = new Date(entry.date);
+    let key;
+    
+    switch(timeFrame) {
+      case 'day':
+        key = date.toISOString().split('T')[0];
+        break;
+      case 'week':
+        const week = Math.floor(date.getDate() / 7);
+        key = `${date.getFullYear()}-W${week}`;
+        break;
+      case 'month':
+        key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+        break;
+      default:
+        key = date.toISOString();
+    }
+    
+    grouped[key] = (grouped[key] || 0) + 1;
+  });
+  return grouped;
+};
+
+const analyzeDownloadPatterns = (history) => {
+  const downloads = history.filter(entry => entry.action === 'Download');
+  return {
+    frequency: groupByTimeFrame(downloads, 'day'),
+    totalDownloads: downloads.length,
+    averageSize: downloads.reduce((acc, curr) => acc + curr.size, 0) / downloads.length
+  };
+};
+
+const identifyPeakUsage = (history) => {
+  const hourlyUsage = new Array(24).fill(0);
+  history.forEach(entry => {
+    const hour = new Date(entry.date).getHours();
+    hourlyUsage[hour]++;
+  });
+  return hourlyUsage;
+};
+
+const calculateDeepestNesting = (structure, level = 0) => {
+  if (!structure || typeof structure !== 'object') return level;
+  
+  return Math.max(
+    level,
+    ...Object.values(structure)
+      .filter(item => item.type === 'folder')
+      .map(folder => calculateDeepestNesting(folder.contents, level + 1))
+  );
+};
+
+const identifyLargestFolders = (structure) => {
+  const folders = [];
+  
+  const traverse = (struct, path = '') => {
+    Object.entries(struct).forEach(([name, item]) => {
+      if (item.type === 'folder') {
+        folders.push({
+          path: path + name,
+          size: item.size,
+          lastModified: item.lastModified
+        });
+        traverse(item.contents, path + name + '/');
+      }
+    });
+  };
+  
+  traverse(structure);
+  return folders.sort((a, b) => b.size - a.size).slice(0, 5);
+};
+
+const findUnusedFolders = (structure, history, threshold = 30) => {
+  const unused = [];
+  const now = new Date();
+  
+  const traverse = (struct, path = '') => {
+    Object.entries(struct).forEach(([name, item]) => {
+      if (item.type === 'folder') {
+        const lastAccess = new Date(item.lastModified);
+        const daysSinceAccess = (now - lastAccess) / (1000 * 60 * 60 * 24);
+        
+        if (daysSinceAccess > threshold) {
+          unused.push({
+            path: path + name,
+            daysSinceAccess: Math.floor(daysSinceAccess),
+            size: item.size
+          });
+        }
+        traverse(item.contents, path + name + '/');
+      }
+    });
+  };
+  
+  traverse(structure);
+  return unused;
+};
 
 const AIAnalysis = () => {
   const [analysis, setAnalysis] = useState('');
-  const [isAnalyzing, setIsAnalyzing] = useState(true);
+  const [isAnalyzing, setIsAnalyzing] = useState(false); // Changed to false initially
+  const [lastAnalysisDate, setLastAnalysisDate] = useState(null);
+  const [loadingMessage, setLoadingMessage] = useState(LOADING_MESSAGES[0]);
   const { currentUser } = useAuth();
 
   useEffect(() => {
-    analyzeUserSystem();
+    // Load last saved analysis from localStorage
+    const savedAnalysis = localStorage.getItem('lastAnalysis');
+    const savedDate = localStorage.getItem('lastAnalysisDate');
+    
+    if (savedAnalysis && savedDate) {
+      setAnalysis(savedAnalysis);
+      setLastAnalysisDate(new Date(savedDate));
+      setIsAnalyzing(false);
+    }
   }, []);
+
+  // Add useEffect for loading message rotation
+  useEffect(() => {
+    let messageInterval;
+    if (isAnalyzing) {
+      messageInterval = setInterval(() => {
+        setLoadingMessage(LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)]);
+      }, 5000); // Change message every 2 seconds
+    }
+    return () => clearInterval(messageInterval);
+  }, [isAnalyzing]);
 
   const analyzeUserSystem = async () => {
     try {
-      // Get user data with error handling
-      const historyLog = await getHistoryLog().catch(() => ({}));
-      const costData = await getCostData().catch(() => ({}));
-      const s3Files = await listS3Objects().catch(() => ([]));
+      setIsAnalyzing(true);
       
+      const historyLog = await getHistoryLog().catch(() => []);
+      const costData = await getCostData().catch(() => ({}));
+      const bucketMetrics = await getBucketMetrics().catch(() => ({
+        totalSize: 0,
+        totalObjects: 0,
+        totalCost: 0
+      }));
+      const folderStructure = await getFolderStructure().catch(() => ({}));
+
+      // Ensure history is an array before processing
+      const safeHistory = Array.isArray(historyLog) ? historyLog : [];
+
       const userData = {
         username: currentUser?.displayName || currentUser?.email?.split('@')[0],
-        historyLog: historyLog || {},
-        costData: costData || {},
-        s3Files: s3Files || [],
+        userEmail: currentUser?.email,
+        systemMetrics: {
+          bucketMetrics,
+          storageUsage: {
+            totalSize: bucketMetrics.totalSize || 0,
+            totalObjects: bucketMetrics.totalObjects || 0,
+            averageFileSize: bucketMetrics.totalObjects ? 
+              bucketMetrics.totalSize / bucketMetrics.totalObjects : 0,
+          },
+          costs: {
+            ...costData,
+            estimatedMonthlyCost: bucketMetrics.totalCost || 0,
+            storageClassDistribution: costData.storageClassStats || {},
+          }
+        },
+        activityMetrics: {
+          history: safeHistory,
+          uploadFrequency: calculateUploadFrequency(safeHistory),
+          downloadPatterns: analyzeDownloadPatterns(safeHistory),
+          peakUsageTimes: identifyPeakUsage(safeHistory),
+        },
+        folderAnalysis: {
+          structure: folderStructure,
+          deepestNesting: calculateDeepestNesting(folderStructure),
+          largestFolders: identifyLargestFolders(folderStructure),
+          unusedFolders: findUnusedFolders(folderStructure, safeHistory),
+        },
         timestamp: new Date().toISOString(),
-        userEmail: currentUser?.email
       };
 
       const result = await analyzeUserData(userData);
       setAnalysis(result);
+      const currentDate = new Date();
+      setLastAnalysisDate(currentDate);
+
+      // Save to localStorage
+      localStorage.setItem('lastAnalysis', result);
+      localStorage.setItem('lastAnalysisDate', currentDate.toISOString());
     } catch (error) {
-      console.error('Analysis error:', error);
+      console.error('Analysis failed');
       setAnalysis('Failed to generate analysis. Please try again later.');
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  // Helper functions
+  const getFolderStructure = async (prefix = '') => {
+    try {
+      // Use the new detailed function for AI analysis
+      return await getDetailedFolderStructure(prefix);
+    } catch (error) {
+      console.error('Error getting folder structure:', error);
+      return {};
+    }
+  };
+
+  const calculateUploadFrequency = (history) => {
+    const uploads = history.filter(entry => entry.action === 'Upload');
+    return {
+      daily: groupByTimeFrame(uploads, 'day'),
+      weekly: groupByTimeFrame(uploads, 'week'),
+      monthly: groupByTimeFrame(uploads, 'month')
+    };
   };
 
   const createPDF = () => {
@@ -86,42 +367,65 @@ const AIAnalysis = () => {
     return { __html: marked(content) };
   };
 
+  const handleRefreshAnalysis = () => {
+    analyzeUserSystem();
+  };
+
   return (
     <div className="ai-analysis-page">
       <div className="ai-header">
         <FaRobot className="ai-icon" />
-        <h1>System Analysis</h1>
+        <h1>Storage Analysis</h1>
         <p>AI-powered insights about your file management system</p>
       </div>
 
       <div className="analysis-container">
-        {isAnalyzing ? (
-          <div className="loading-state">
-            <FaSpinner className="spinner" />
-            <p>Analyzing your system data...</p>
+        <div className="analysis-wrapper">
+          <div className="analysis-actions">
+            <div className="analysis-meta">
+              {lastAnalysisDate && (
+                <span className="last-analysis-date">
+                  Last analyzed: {lastAnalysisDate.toLocaleString()}
+                </span>
+              )}
+            </div>
+            <div className="action-buttons">
+              <button 
+                className="refresh-btn"
+                onClick={handleRefreshAnalysis}
+                disabled={isAnalyzing}
+              >
+                <FaSync className={isAnalyzing ? 'spinner' : ''} /> 
+                {isAnalyzing ? 'Analyzing...' : 'Refresh Analysis'}
+              </button>
+              {analysis && (
+                <button 
+                  className="download-report-btn"
+                  onClick={createPDF}
+                >
+                  <FaDownload /> Download Report
+                </button>
+              )}
+            </div>
           </div>
-        ) : (
-          <>
-            {analysis && (
-              <div className="analysis-wrapper">
-                <div className="analysis-actions">
-                  <button 
-                    className="download-report-btn"
-                    onClick={createPDF}
-                  >
-                    <FaDownload /> Download Report
-                  </button>
-                </div>
-                
-                <div 
-                  id="analysis-content"
-                  className="analysis-content"
-                  dangerouslySetInnerHTML={renderMarkdown(analysis)}
-                />
-              </div>
-            )}
-          </>
-        )}
+          
+          {isAnalyzing ? (
+            <div className="loading-state">
+              <FaSpinner className="spinner" />
+              <p>{loadingMessage}</p>
+            </div>
+          ) : analysis ? (
+            <div 
+              id="analysis-content"
+              className="analysis-content"
+              dangerouslySetInnerHTML={renderMarkdown(analysis)}
+            />
+          ) : (
+            <div className="empty-state">
+              <p>Click the Refresh Analysis button to generate a new report.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
