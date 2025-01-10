@@ -1,0 +1,204 @@
+.login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  padding: 20px;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin: auto;
+}
+
+.form-control:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn-primary {
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+}
+
+.navbar-custom {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px);
+  padding: 0.5rem 1rem;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.navbar-custom .navbar-nav .nav-link {
+  padding: 0.5rem 1rem;
+  color: #333;
+}
+
+.navbar-custom .navbar-nav .nav-link:hover {
+  color: #007bff;
+}
+
+/* Add padding to body to prevent content from hiding under navbar */
+body {
+  padding-top: 80px; /* Adjust this value to match navbar height */
+  background-color: #f8f9fa; /* Add a light background color */
+  min-height: 100vh;
+}
+
+.brand-text {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #232f3e;
+  letter-spacing: -0.5px;
+}
+
+.navbar-custom .navbar-brand {
+  padding: 0.25rem 0;
+  transition: opacity 0.2s ease;
+}
+
+.navbar-custom .navbar-brand:hover {
+  opacity: 0.85;
+}
+
+/* Brand Styles */
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.3s ease;
+}
+
+.brand-wrapper:hover {
+  transform: translateY(-1px);
+}
+
+.brand-logo {
+  transition: transform 0.3s ease;
+}
+
+.brand-wrapper:hover .brand-logo {
+  transform: scale(1.05);
+}
+
+/* Navigation Links */
+.nav-links-center {
+  gap: 10px;
+}
+
+.nav-link-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px !important;
+  border-radius: 6px;
+  transition: all 0.3s ease !important;
+  position: relative;
+}
+
+.nav-link-custom:hover {
+  background: rgba(0, 123, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.nav-link-custom.active {
+  background: rgba(0, 123, 255, 0.15);
+  color: #007bff !important;
+}
+
+.nav-icon {
+  font-size: 1.1rem;
+  transition: transform 0.3s ease;
+}
+
+.nav-link-custom:hover .nav-icon {
+  transform: scale(1.1);
+}
+
+/* User Dropdown Styles */
+.user-dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgba(0, 123, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.user-dropdown-toggle:hover {
+  background: rgba(0, 123, 255, 0.2);
+}
+
+.user-icon {
+  font-size: 1.1rem;
+  color: #007bff;
+}
+
+.username {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.custom-dropdown .dropdown-menu {
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin-top: 10px;
+  animation: dropdownFade 0.3s ease;
+}
+
+.dropdown-icon {
+  margin-right: 8px;
+  color: #6c757d;
+}
+
+.logout-item {
+  color: #dc3545 !important;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+  .nav-links-center {
+    margin: 1rem 0;
+  }
+  
+  .user-dropdown-toggle {
+    margin-top: 1rem;
+  }
+
+  body {
+    padding-top: 64px;
+  }
+
+  .page-container {
+    margin-top: 2rem;
+  }
+
+  .container {
+    padding: 1rem;
+  }
+}
+
+.page-container {
+  padding-bottom: 80px; /* Add space for footer */
+}

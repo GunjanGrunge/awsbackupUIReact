@@ -1,0 +1,190 @@
+.cost-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 64px auto 0;
+}
+
+.cost-title {
+  color: #1e293b;
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.exchange-rate-alert {
+  background-color: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0369a1;
+}
+
+.cost-card {
+  height: 100%;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+  transition: transform 0.2s ease;
+}
+
+.cost-card:hover {
+  transform: translateY(-5px);
+}
+
+.cost-card.storage {
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+}
+
+.cost-card.transfer {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+.cost-card.total {
+  background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%);
+}
+
+.cost-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.storage .cost-icon {
+  color: #3b82f6;
+}
+
+.transfer .cost-icon {
+  color: #22c55e;
+}
+
+.total .cost-icon {
+  color: #eab308;
+}
+
+.cost-amount {
+  margin: 1rem 0;
+}
+
+.cost-amount .usd {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.cost-amount .usd.secondary {
+  font-size: 1.1rem;
+  color: #64748b;
+  font-weight: 400;
+}
+
+.cost-amount .inr {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.cost-details {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-top: 0.5rem;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+}
+
+.welcome-section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+  padding: 3rem 2rem;
+  margin-top: 2rem;
+}
+
+.welcome-title {
+  color: #1e293b;
+  font-size: 2.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.welcome-text {
+  color: #64748b;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  color: #475569;
+  font-size: 1.1rem;
+}
+
+.feature-icon {
+  color: #10b981;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.welcome-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem;
+}
+
+.welcome-image img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.welcome-image img:hover {
+  transform: translateY(-5px);
+}
+
+@media (max-width: 768px) {
+  .cost-container {
+    padding: 1rem;
+  }
+
+  .cost-card {
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-width: 991px) {
+  .welcome-section {
+    padding: 2rem 1.5rem;
+  }
+
+  .welcome-title {
+    font-size: 2rem;
+  }
+
+  .welcome-image {
+    margin-top: 2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .welcome-section {
+    padding: 1.5rem 1rem;
+  }
+
+  .welcome-title {
+    font-size: 1.75rem;
+  }
+}
