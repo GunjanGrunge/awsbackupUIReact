@@ -35,6 +35,12 @@
   padding: 0.5rem 1rem;
   box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: white !important;
 }
 
 .navbar-custom .navbar-nav .nav-link {
@@ -51,6 +57,10 @@ body {
   padding-top: 80px; /* Adjust this value to match navbar height */
   background-color: #f8f9fa; /* Add a light background color */
   min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: #f8f9fa;
 }
 
 .brand-text {
@@ -247,4 +257,21 @@ body {
   .nav-links.active {
     display: flex;
   }
+}
+
+.app-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding-top: 80px; /* Height of navbar */
+  padding-bottom: 60px; /* Height of footer */
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 20px;
+  padding-right: 20px;
 }

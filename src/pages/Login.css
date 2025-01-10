@@ -174,3 +174,21 @@
         transform: translateY(0);
     }
 }
+
+.btn-outline-secondary {
+    background: transparent;
+    border: 1px solid #6c757d;
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-secondary:hover:not(:disabled) {
+    background: #6c757d;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.btn-outline-secondary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}

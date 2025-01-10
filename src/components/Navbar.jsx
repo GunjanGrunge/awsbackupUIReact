@@ -43,7 +43,7 @@ function NavigationBar() {
         bg="white" 
         expand="lg" 
         fixed="top" 
-        className="navbar-custom py-2"
+        className="navbar-custom"
         expanded={expanded}
         onToggle={(expanded) => setExpanded(expanded)}
       >

@@ -36,7 +36,11 @@ const Login = () => {
             navigate('/');
         } catch (error) {
             console.error('Login error:', error);
-            setError('Invalid credentials');
+            if (error.message.includes('reCAPTCHA')) {
+                setError('Please complete the reCAPTCHA verification');
+            } else {
+                setError('Invalid credentials');
+            }
             showToast('Login failed', 'error');
         } finally {
             setLoading(false);
@@ -90,7 +94,7 @@ const Login = () => {
                                 </div>
                                 <button 
                                     type="submit" 
-                                    className="btn btn-primary w-100"
+                                    className="btn btn-primary w-100 mb-2"
                                     disabled={loading}
                                 >
                                     {loading ? 'Logging in...' : 'Login'}

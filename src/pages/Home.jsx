@@ -195,6 +195,9 @@ const Home = () => {
 
   return (
     <div className="page-container">
+      {/* Add this div for reCAPTCHA */}
+      <div id="recaptcha-container"></div>
+      
       <div className="upload-dashboard">
         <div className="dashboard-header">
           <h1 className="dashboard-title">UPLOAD YOUR FILES & FOLDERS</h1>

@@ -29,33 +29,23 @@ function App() {
               path="/*"
               element={
                 <PrivateRoute>
-                  <>
+                  <div className="app-wrapper">
                     <NavigationBar />
-                    <Routes>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/folder" element={<Folder />} />
-                      <Route path="/history" element={<History />} />
-                      <Route path="/cost" element={<Cost />} />
-                      <Route path="*" element={<Navigate to="/" />} />
-                    </Routes>
+                    <main className="main-content">
+                      <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route path="/folder" element={<Folder />} />
+                        <Route path="/history" element={<History />} />
+                        <Route path="/cost" element={<Cost />} />
+                      </Routes>
+                    </main>
                     <Footer />
-                  </>
+                  </div>
                 </PrivateRoute>
               }
             />
           </Routes>
-          <ToastContainer 
-            position="top-right"
-            autoClose={5000}
-            hideProgressBar={false}
-            newestOnTop
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="colored"
-          />
+          <ToastContainer />
         </Router>
       </ToastProvider>
     </AuthProvider>

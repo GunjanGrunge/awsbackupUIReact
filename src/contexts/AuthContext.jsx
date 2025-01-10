@@ -7,7 +7,8 @@ import {
   signOut,
   updateProfile,
   updateEmail,
-  sendEmailVerification
+  sendEmailVerification,
+  RecaptchaVerifier
 } from 'firebase/auth';
 
 const AuthContext = createContext();
@@ -21,11 +22,35 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const auth = getAuth();
 
+  const setupRecaptcha = async () => {
+    try {
+      if (!window.recaptchaVerifier) {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+          callback: () => {
+            console.log("reCAPTCHA resolved");
+          }
+        });
+        await window.recaptchaVerifier.render();
+      }
+      return window.recaptchaVerifier;
+    } catch (error) {
+      console.error("reCAPTCHA setup error:", error);
+      throw error;
+    }
+  };
+
   async function login(email, password) {
     try {
+      const verifier = await setupRecaptcha();
+      await verifier.verify();
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       return userCredential.user;
     } catch (error) {
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = null;
+      }
       throw new Error(error.message);
     }
   }
@@ -78,6 +103,7 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}
+      <div id="recaptcha-container"></div>
     </AuthContext.Provider>
   );
 }
