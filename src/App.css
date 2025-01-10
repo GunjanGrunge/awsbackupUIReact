@@ -202,3 +202,49 @@ body {
 .page-container {
   padding-bottom: 80px; /* Add space for footer */
 }
+
+@media screen and (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .button {
+    width: 100%;
+    margin: 5px 0;
+  }
+
+  .content {
+    margin-top: 10px;
+  }
+}
+
+.mobile-menu-button {
+  display: none;
+}
+
+@media screen and (max-width: 768px) {
+  .mobile-menu-button {
+    display: block;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .nav-links.active {
+    display: flex;
+  }
+}
