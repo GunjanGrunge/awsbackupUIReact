@@ -11,15 +11,40 @@ export const analyzeUserData = async (consolidatedData, onChunk) => {
       storage: {
         totalSize: consolidatedData.storageMetrics.totalSize,
         totalObjects: consolidatedData.storageMetrics.totalObjects,
-        avgFileSize: consolidatedData.storageMetrics.averageFileSize,
-        utilizationTrends: consolidatedData.storageMetrics.utilizationTrends
+        averageFileSize: consolidatedData.storageMetrics.averageFileSize,
+        storageClasses: consolidatedData.storageMetrics.storageClasses,
+        utilization: {
+          daily: consolidatedData.storageMetrics.utilizationTrends.daily,
+          byService: consolidatedData.storageMetrics.utilizationTrends.byService,
+          byUsageType: consolidatedData.storageMetrics.utilizationTrends.byUsageType
+        }
       },
       costs: {
-        current: consolidatedData.costAnalytics.current,
+        current: {
+          ...consolidatedData.costAnalytics.current,
+          breakdown: consolidatedData.costAnalytics.historical.serviceBreakdown
+        },
         projected: consolidatedData.costAnalytics.projected,
-        historical: consolidatedData.costAnalytics.historical,
-        metrics: consolidatedData.costAnalytics.metrics,
-        trends: consolidatedData.costAnalytics.trends
+        historical: {
+          daily: consolidatedData.costAnalytics.historical.daily,
+          monthly: consolidatedData.costAnalytics.historical.monthly,
+          serviceBreakdown: consolidatedData.costAnalytics.historical.serviceBreakdown
+        },
+        metrics: {
+          costPerGB: consolidatedData.costAnalytics.metrics.costPerGB,
+          costPerRequest: consolidatedData.costAnalytics.metrics.costPerRequest,
+          transferCosts: consolidatedData.costAnalytics.metrics.transferCosts
+        },
+        trends: consolidatedData.costAnalytics.trends,
+        spikes: consolidatedData.costAnalytics.trends.spikes
+      },
+      usage: {
+        patterns: {
+          hourly: consolidatedData.usagePatterns.hourlyDistribution,
+          weekly: consolidatedData.usagePatterns.weeklyPatterns,
+          operations: consolidatedData.usagePatterns.operationTypes,
+          peakPeriods: consolidatedData.usagePatterns.peakPeriods
+        }
       },
       folders: {
         total: consolidatedData.folderAnalytics.totalFolders,
@@ -27,38 +52,49 @@ export const analyzeUserData = async (consolidatedData, onChunk) => {
         deepestNesting: consolidatedData.folderAnalytics.deepestNesting,
         sizeDistribution: consolidatedData.folderAnalytics.sizeDistribution,
         unusedFolders: consolidatedData.folderAnalytics.unusedFolders
-      },
-      usage: consolidatedData.usagePatterns,
-      recommendations: consolidatedData.recommendations
+      }
     };
 
     const systemPrompt = `
-    Act as an AWS S3 Cost Analyzer. Generate a clear, data-driven bullet-point report using AWS Cost Explorer data. The report must include specific numbers, percentages, and highlight anomalies or cost spikes. Structure the report as follows:
+    You are an AWS S3 Storage and Cost Analyst. Generate a detailed report using the provided data. Include:
 
-Cost Analysis Summary
-Month-to-date S3 costs vs projected costs (with % difference)
-Notable usage trends and any cost anomalies
-Daily cost breakdown highlighting spikes or drops
-Service Usage Analysis
-Current S3 storage utilization by storage class (in GB/TB and %)
-Breakdown of request patterns (GET, PUT, LIST) and their costs
-Data transfer insights (intra-region, cross-region, internet) with cost impact
-Cost Optimization Recommendations
-Suggested storage class transitions (e.g., Standard → Infrequent Access) with estimated savings
-Tips to reduce request costs (batching, caching strategies)
-Data transfer cost optimization strategies (e.g., using CloudFront, Transfer Acceleration)
-Ensure the report is concise, focused on actionable insights, and emphasizes significant cost drivers or unusual patterns.
+    1. Cost Analysis Summary
+    - Month-to-date costs vs projected costs (include % difference)
+    - Cost trends and anomalies from historical data
+    - Detailed daily cost breakdown with identified spikes
+    - Service-wise cost distribution
+
+    2. Storage Analysis
+    - Current storage utilization by storage class
+    - Storage growth trends
+    - File and folder distribution analysis
+    - Unused/inefficient storage identification
+
+    3. Usage Patterns
+    - Request patterns (GET, PUT, LIST) analysis
+    - Peak usage periods identification
+    - Data transfer patterns and costs
+    - Operation type distribution
+
+    4. Optimization Recommendations
+    - Storage class optimization opportunities
+    - Cost reduction strategies
+    - Performance improvement suggestions
+    - Resource utilization recommendations
+
+    Use specific numbers, percentages, and trends. Highlight any anomalies or areas needing attention.
+    Format the response in Markdown with clear sections and bullet points.
     `;
 
     const userPrompt = `Analyze this S3 data: ${JSON.stringify(simplifiedData, null, 1)}`;
 
     const stream = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview",
+      model: "chatgpt-4o-latest",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      temperature: 0.7,
+      temperature: 0.5,
       max_tokens: 1000,
       stream: true
     });
