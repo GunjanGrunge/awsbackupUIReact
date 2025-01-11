@@ -5,47 +5,31 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true
 });
 
-export const analyzeUserData = async (userData) => {
+export const analyzeUserData = async (consolidatedData, onChunk) => {
   try {
     const simplifiedData = {
       storage: {
-        totalSize: userData.systemMetrics.storageUsage.totalSize,
-        totalObjects: userData.systemMetrics.storageUsage.totalObjects,
-        avgFileSize: userData.systemMetrics.storageUsage.averageFileSize,
+        totalSize: consolidatedData.storageMetrics.totalSize,
+        totalObjects: consolidatedData.storageMetrics.totalObjects,
+        avgFileSize: consolidatedData.storageMetrics.averageFileSize,
+        utilizationTrends: consolidatedData.storageMetrics.utilizationTrends
       },
       costs: {
-        monthly: userData.systemMetrics.costs.totalMonthlyCost,
-        storage: userData.systemMetrics.costs.monthlyCosts?.storage || 0,
-        transfer: userData.systemMetrics.costs.monthlyCosts?.transfer || 0,
-        requests: userData.systemMetrics.costs.monthlyCosts?.requests || 0,
-        billing: userData.systemMetrics.costs.billing || {},
-        recommendations: userData.systemMetrics.costs.recommendations || [],
-        awsActual: {
-          dailyCosts: userData.systemMetrics.costs.awsCostExplorer.dailyCosts,
-          byService: userData.systemMetrics.costs.awsCostExplorer.serviceCosts,
-          byUsageType: userData.systemMetrics.costs.awsCostExplorer.usageTypes,
-          costComparison: userData.systemMetrics.costs.costBreakdown
-        },
-        actual: {
-          daily: userData.systemMetrics.costs.costHistory,
-          byService: userData.systemMetrics.costs.serviceCosts,
-          byUsageType: userData.systemMetrics.costs.awsCostExplorer.usageTypes,
-        },
-        trends: {
-          dailyAverage: userData.systemMetrics.costs.dailyAverage,
-          projected: userData.systemMetrics.costs.projectedCosts
-        }
-      },
-      activity: {
-        uploadCount: Object.values(userData.activityMetrics.uploadFrequency.monthly || {}).reduce((a, b) => a + b, 0),
-        downloadCount: userData.activityMetrics.downloadPatterns.totalDownloads,
-        peakHour: userData.activityMetrics.peakUsageTimes.indexOf(Math.max(...userData.activityMetrics.peakUsageTimes)),
+        current: consolidatedData.costAnalytics.current,
+        projected: consolidatedData.costAnalytics.projected,
+        historical: consolidatedData.costAnalytics.historical,
+        metrics: consolidatedData.costAnalytics.metrics,
+        trends: consolidatedData.costAnalytics.trends
       },
       folders: {
-        unused: userData.folderAnalysis.unusedFolders.length,
-        deepestNesting: userData.folderAnalysis.deepestNesting,
-        largestFolders: userData.folderAnalysis.largestFolders.slice(0, 3),
-      }
+        total: consolidatedData.folderAnalytics.totalFolders,
+        files: consolidatedData.folderAnalytics.totalFiles,
+        deepestNesting: consolidatedData.folderAnalytics.deepestNesting,
+        sizeDistribution: consolidatedData.folderAnalytics.sizeDistribution,
+        unusedFolders: consolidatedData.folderAnalytics.unusedFolders
+      },
+      usage: consolidatedData.usagePatterns,
+      recommendations: consolidatedData.recommendations
     };
 
     const systemPrompt = `
@@ -68,17 +52,25 @@ Ensure the report is concise, focused on actionable insights, and emphasizes sig
 
     const userPrompt = `Analyze this S3 data: ${JSON.stringify(simplifiedData, null, 1)}`;
 
-    const completion = await openai.chat.completions.create({
+    const stream = await openai.chat.completions.create({
       model: "gpt-4-turbo-preview",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
       temperature: 0.7,
-      max_tokens: 1000 // Significantly reduced token limit
+      max_tokens: 1000,
+      stream: true
     });
 
-    return completion.choices[0].message.content;
+    let fullResponse = '';
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || '';
+      fullResponse += content;
+      onChunk(content);
+    }
+
+    return fullResponse;
   } catch (error) {
     console.error('OpenAI API Error:', {
       error,

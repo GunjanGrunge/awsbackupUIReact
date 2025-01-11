@@ -15,6 +15,7 @@ import {
 import { getAIHistory, updateAIHistory } from '../services/aiHistoryService';
 import aiLogo from '../images/ailogo.png';
 import './AIAnalysis.css';
+import { getConsolidatedAnalysis } from '../services/aiAnalyticsService';
 
 const LOADING_MESSAGES = [
   "Analyzing your system data...",
@@ -219,6 +220,7 @@ const AIAnalysis = () => {
   const [lastAnalysisDate, setLastAnalysisDate] = useState(null);
   const [loadingMessage, setLoadingMessage] = useState(LOADING_MESSAGES[0]);
   const { currentUser } = useAuth();
+  const [streamedContent, setStreamedContent] = useState('');
 
   useEffect(() => {
     loadLastAnalysis();
@@ -250,65 +252,29 @@ const AIAnalysis = () => {
   const analyzeUserSystem = async () => {
     try {
       setIsAnalyzing(true);
+      setStreamedContent('');
       
-      const historyLog = await getHistoryLog().catch(() => []);
-      const costData = await getCostData().catch(() => ({}));
-      const bucketMetrics = await getBucketMetrics().catch(() => ({
-        totalSize: 0,
-        totalObjects: 0,
-        totalCost: 0
-      }));
-      const folderStructure = await getFolderStructure().catch(() => ({}));
+      // Get consolidated data
+      const consolidatedData = await getConsolidatedAnalysis();
+      
+      if (!consolidatedData) {
+        throw new Error('Failed to fetch consolidated analysis data');
+      }
 
-      // Ensure history is an array before processing
-      const safeHistory = Array.isArray(historyLog) ? historyLog : [];
-
-      const userData = {
-        username: currentUser?.displayName || currentUser?.email?.split('@')[0],
-        userEmail: currentUser?.email,
-        systemMetrics: {
-          bucketMetrics,
-          storageUsage: {
-            totalSize: bucketMetrics.totalSize || 0,
-            totalObjects: bucketMetrics.totalObjects || 0,
-            averageFileSize: bucketMetrics.totalObjects ? 
-              bucketMetrics.totalSize / bucketMetrics.totalObjects : 0,
-          },
-          costs: {
-            ...costData,
-            estimatedMonthlyCost: bucketMetrics.totalCost || 0,
-            storageClassDistribution: costData.storageClassStats || {},
-          }
-        },
-        activityMetrics: {
-          history: safeHistory,
-          uploadFrequency: calculateUploadFrequency(safeHistory),
-          downloadPatterns: analyzeDownloadPatterns(safeHistory),
-          peakUsageTimes: identifyPeakUsage(safeHistory),
-        },
-        folderAnalysis: {
-          structure: folderStructure,
-          deepestNesting: calculateDeepestNesting(folderStructure),
-          largestFolders: identifyLargestFolders(folderStructure),
-          unusedFolders: findUnusedFolders(folderStructure, safeHistory),
-        },
-        timestamp: new Date().toISOString(),
+      const handleChunk = (chunk) => {
+        setStreamedContent(prev => prev + chunk);
       };
 
-      const result = await analyzeUserData(userData);
+      // Pass consolidated data to OpenAI
+      const result = await analyzeUserData(consolidatedData, handleChunk);
       
-      // Update AI history in S3
+      // Update AI history and state
       await updateAIHistory(result);
-      
       setAnalysis(result);
-      const currentDate = new Date();
-      setLastAnalysisDate(currentDate);
+      setLastAnalysisDate(new Date());
 
-      // Save to localStorage
-      localStorage.setItem('lastAnalysis', result);
-      localStorage.setItem('lastAnalysisDate', currentDate.toISOString());
     } catch (error) {
-      console.error('Analysis failed');
+      console.error('Analysis failed:', error);
       setAnalysis('Failed to generate analysis. Please try again later.');
     } finally {
       setIsAnalyzing(false);
@@ -423,6 +389,12 @@ const AIAnalysis = () => {
             <div className="loading-state">
               <FaSpinner className="spinner" />
               <p>{loadingMessage}</p>
+              {streamedContent && (
+                <div 
+                  className="streamed-content"
+                  dangerouslySetInnerHTML={renderMarkdown(streamedContent)}
+                />
+              )}
             </div>
           ) : analysis ? (
             <div 

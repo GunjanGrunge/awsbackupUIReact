@@ -439,3 +439,26 @@
 }
 
 /* ...rest of existing styles... */
+
+/* ...existing styles... */
+
+.streamed-content {
+  text-align: left;
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  margin-top: 2rem;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.streamed-content p,
+.streamed-content li {
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ...rest of existing styles... */
