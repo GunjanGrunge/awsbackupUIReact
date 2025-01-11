@@ -5,6 +5,7 @@ import { FaUser, FaHome, FaFolder, FaHistory, FaCog, FaSignOutAlt, FaKey, FaMone
 import { useState } from 'react';
 import ProfileModal from './ProfileModal';
 import awsLogo from '../images/aws-s3.png';
+import aiLogo from '../images/ailogo.png';
 import './Navbar.css';
 import { useToast } from '../contexts/ToastContext';
 
@@ -66,7 +67,11 @@ function NavigationBar() {
                 { path: '/folder', icon: FaFolder, label: 'Folders' },
                 { path: '/history', icon: FaHistory, label: 'Activity' },
                 { path: '/cost', icon: FaMoneyBillWave, label: 'Cost' },
-                ...(isAdmin ? [{ path: '/ai-analysis', icon: FaRobot, label: '' }] : [])
+                ...(isAdmin ? [{ 
+                  path: '/ai-analysis', 
+                  icon: () => <img src={aiLogo} alt="AI" className="nav-icon ai-nav-icon" />, 
+                  label: '' 
+                }] : [])
               ].map(({ path, icon: Icon, label }) => (
                 <Nav.Link
                   key={path}

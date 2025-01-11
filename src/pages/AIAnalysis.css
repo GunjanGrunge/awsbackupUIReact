@@ -11,8 +11,10 @@
 
 .ai-icon {
   font-size: 3rem;
-  color: #6366f1;
   margin-bottom: 1rem;
+  width: 94px;  /* Adjust size as needed */
+  height: 94px; /* Adjust size as needed */
+  object-fit: contain;
 }
 
 .analysis-container {

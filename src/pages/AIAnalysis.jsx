@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaRobot, FaSpinner, FaDownload, FaSync } from 'react-icons/fa';
+import { FaSpinner, FaDownload, FaSync } from 'react-icons/fa';
 import { marked } from 'marked';
 import html2pdf from 'html2pdf.js';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,6 +13,7 @@ import {
   getDetailedFolderStructure 
 } from '../services/s3Service';
 import { getAIHistory, updateAIHistory } from '../services/aiHistoryService';
+import aiLogo from '../images/ailogo.png';
 import './AIAnalysis.css';
 
 const LOADING_MESSAGES = [
@@ -383,7 +384,7 @@ const AIAnalysis = () => {
   return (
     <div className="ai-analysis-page">
       <div className="ai-header">
-        <FaRobot className="ai-icon" />
+        <img src={aiLogo} alt="AI Analysis" className="ai-icon" />
         <h1>Storage Analysis</h1>
         <p>AI-powered insights about your file management system</p>
       </div>

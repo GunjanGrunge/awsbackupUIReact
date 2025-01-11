@@ -44,5 +44,21 @@
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^15.14.0",
     "vite": "^6.0.5"
+  },
+  "browser": {
+    "util": "util",
+    "stream": "stream-browserify",
+    "buffer": "buffer",
+    "process": "process/browser",
+    "events": "events",
+    "path": "path-browserify",
+    "crypto": "crypto-browserify",
+    "https": "https-browserify",
+    "http": "stream-http",
+    "os": "os-browserify/browser",
+    "assert": "assert",
+    "constants": "constants-browserify",
+    "zlib": "browserify-zlib",
+    "readable-stream": "readable-stream"
   }
 }

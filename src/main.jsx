@@ -1,3 +1,12 @@
+import 'buffer';
+import { Buffer } from 'buffer';
+import process from 'process';
+import util from 'util';
+
+window.Buffer = Buffer;
+window.process = process;
+window.util = util;
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
