@@ -12,6 +12,7 @@ import {
   getBucketMetrics,
   getDetailedFolderStructure 
 } from '../services/s3Service';
+import { getAIHistory, updateAIHistory } from '../services/aiHistoryService';
 import './AIAnalysis.css';
 
 const LOADING_MESSAGES = [
@@ -219,16 +220,20 @@ const AIAnalysis = () => {
   const { currentUser } = useAuth();
 
   useEffect(() => {
-    // Load last saved analysis from localStorage
-    const savedAnalysis = localStorage.getItem('lastAnalysis');
-    const savedDate = localStorage.getItem('lastAnalysisDate');
-    
-    if (savedAnalysis && savedDate) {
-      setAnalysis(savedAnalysis);
-      setLastAnalysisDate(new Date(savedDate));
-      setIsAnalyzing(false);
-    }
+    loadLastAnalysis();
   }, []);
+
+  const loadLastAnalysis = async () => {
+    try {
+      const aiHistory = await getAIHistory();
+      if (aiHistory.lastAnalysis) {
+        setAnalysis(aiHistory.lastAnalysis.report);
+        setLastAnalysisDate(new Date(aiHistory.lastAnalysis.timestamp));
+      }
+    } catch (error) {
+      console.error('Error loading last analysis:', error);
+    }
+  };
 
   // Add useEffect for loading message rotation
   useEffect(() => {
@@ -290,6 +295,10 @@ const AIAnalysis = () => {
       };
 
       const result = await analyzeUserData(userData);
+      
+      // Update AI history in S3
+      await updateAIHistory(result);
+      
       setAnalysis(result);
       const currentDate = new Date();
       setLastAnalysisDate(currentDate);

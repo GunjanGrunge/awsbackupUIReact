@@ -10,7 +10,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import JSZip from 'jszip';
 
 // Configure S3 client with browser-compatible settings
-const s3Client = new S3Client({
+export const s3Client = new S3Client({
   region: import.meta.env.VITE_REGION,
   credentials: {
     accessKeyId: import.meta.env.VITE_ACCESS_KEY_ID,
@@ -26,7 +26,7 @@ const s3Client = new S3Client({
   maxAttempts: 3,
 });
 
-const EXCLUDED_FILES = ['history-log.json'];
+const EXCLUDED_FILES = ['history-log.json', 'ai-history-log.json'];
 
 // Update upload configuration for browser compatibility
 export const uploadToS3 = async (file, folderName) => {

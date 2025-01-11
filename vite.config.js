@@ -8,14 +8,26 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
+      './runtimeConfig': './runtimeConfig.browser',
     },
   },
-  // Add this to ensure favicon is properly handled
+  define: {
+    'process.env.NODE_DEBUG': JSON.stringify(''),
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      // Node.js global to browser globalThis
+      define: {
+        global: 'globalThis',
+      },
+    },
+  },
   build: {
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
       },
+      external: ['util'],
     },
   },
 })
