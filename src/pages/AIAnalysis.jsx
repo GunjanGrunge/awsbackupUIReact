@@ -254,7 +254,7 @@ const AIAnalysis = () => {
       setIsAnalyzing(true);
       setStreamedContent('');
       
-      // Get consolidated data
+      // This line gets all the consolidated data
       const consolidatedData = await getConsolidatedAnalysis();
       
       if (!consolidatedData) {
@@ -265,7 +265,7 @@ const AIAnalysis = () => {
         setStreamedContent(prev => prev + chunk);
       };
 
-      // Pass consolidated data to OpenAI
+      // This line passes the data to OpenAI
       const result = await analyzeUserData(consolidatedData, handleChunk);
       
       // Update AI history and state
