@@ -5,15 +5,13 @@ import {
   FaTrash, 
   FaEye, 
   FaCheckCircle, 
-  FaTrashAlt, 
-  FaRobot 
+  FaTrashAlt
 } from 'react-icons/fa';
 import { useDropzone } from 'react-dropzone';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { uploadToS3 } from '../services/s3Service';
 import welcomeImage from '../images/7471053.jpg';
-import { analyzeUserData } from '../services/openaiService';
 import './Home.css';
 
 const Home = ({ initialTab }) => {
@@ -22,8 +20,6 @@ const Home = ({ initialTab }) => {
   const { currentUser } = useAuth();
   const { showToast } = useToast();
   const [previews, setPreviews] = useState({});
-  const [aiAnalysis, setAiAnalysis] = useState('');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     // Clean up previews when component unmounts
@@ -136,26 +132,9 @@ const Home = ({ initialTab }) => {
     multiple: true,
     noClick: false, // Enable clicking
     noKeyboard: false, // Enable keyboard interaction
-    getFilesFromEvent: async (event) => {
-      const items = event.dataTransfer ? event.dataTransfer.items : event.target.files;
-      
-      let files = [];
-      for (const item of items) {
-        if (item.kind === 'file' || item instanceof File) {
-          const file = item instanceof File ? item : await item.getAsFile();
-          if (file) {
-            // Preserve folder structure if available
-            const path = file.webkitRelativePath || file.path || file.name;
-            Object.defineProperty(file, 'path', {
-              value: path,
-              writable: true
-            });
-            files.push(file);
-          }
-        }
-      }
-      return files;
-    }
+    // Add these two lines to enable folder upload
+    noDrag: false,
+    webkitdirectory: true
   });
 
   // Cleanup function for previews
@@ -213,22 +192,6 @@ const Home = ({ initialTab }) => {
     }
   };
 
-  const handleAnalyzeFiles = async () => {
-    if (files.length === 0) return;
-    
-    setIsAnalyzing(true);
-    try {
-      const analysis = await analyzeFiles(files);
-      setAiAnalysis(analysis);
-      showToast('Analysis complete!', 'success');
-    } catch (error) {
-      console.error('Analysis error:', error);
-      showToast('Failed to analyze files', 'error');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
   return (
     <div className="page-container">
       {/* Add this div for reCAPTCHA */}
@@ -246,8 +209,8 @@ const Home = ({ initialTab }) => {
             <div className="dropzone-content">
               <FaCloudUploadAlt className={`upload-icon ${uploading ? 'rotating' : ''}`} />
               <div className="dropzone-text">
-                <h3>{isDragActive ? 'Drop files here' : 'Drag & Drop Files'}</h3>
-                <p>or click to browse from your computer</p>
+                <h3>{isDragActive ? 'Drop here' : 'Drag & Drop Files & Folders'}</h3>
+                <p>Tip: For folder upload, drag and drop the folder here</p>
               </div>
             </div>
           </div>
@@ -260,7 +223,7 @@ const Home = ({ initialTab }) => {
                   <span className="files-count">{files.length} files</span>
                 </div>
                 <div className="files-actions">
-                  {files.length > 10 && (
+                  {files.length > 1 && (
                     <button
                       className="remove-all-button"
                       onClick={handleRemoveAll}
@@ -325,35 +288,6 @@ const Home = ({ initialTab }) => {
                     </div>
                   </div>
                 ))}
-              </div>
-
-              <div className="ai-analysis-section">
-                <button 
-                  className="analyze-button"
-                  onClick={handleAnalyzeFiles}
-                  disabled={isAnalyzing || uploading}
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <span className="spinner-border" />
-                      <span>Analyzing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FaRobot size={20} />
-                      <span>Analyze with AI</span>
-                    </>
-                  )}
-                </button>
-                
-                {aiAnalysis && (
-                  <div className="analysis-results">
-                    <h3>AI Analysis</h3>
-                    <div className="analysis-content">
-                      <pre>{aiAnalysis}</pre>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           )}
