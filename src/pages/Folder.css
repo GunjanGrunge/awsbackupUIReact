@@ -609,3 +609,174 @@
 }
 
 /* ...rest of existing styles... */
+
+/* ...existing styles... */
+
+.folder-browser {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.folder-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0;
+}
+
+.folder-table thead th {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 20px 24px;
+  border-bottom: 2px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.folder-table tbody tr {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.folder-table tbody tr:hover {
+  background: linear-gradient(90deg, #f8fafc 0%, #ffffff 100%);
+  transform: translateX(4px);
+}
+
+.folder-table td {
+  padding: 16px 24px;
+  color: #1e293b;
+}
+
+.folder-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.folder-icon {
+  color: #f59e0b;
+  font-size: 1.5rem;
+  filter: drop-shadow(0 2px 4px rgba(245, 158, 11, 0.1));
+}
+
+.file-icon {
+  color: #3b82f6;
+  font-size: 1.5rem;
+  filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.1));
+}
+
+.folder-name {
+  font-weight: 500;
+  color: #1e293b;
+  font-size: 1rem;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-info {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.folder-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.folder-table tr:hover .folder-actions {
+  opacity: 1;
+  transform: translateX(-4px);
+}
+
+.action-button {
+  padding: 10px;
+  border-radius: 8px;
+  color: #64748b;
+  transition: all 0.2s ease;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.action-button.download:hover {
+  background: #dbeafe;
+  color: #2563eb;
+  border-color: #93c5fd;
+}
+
+.action-button.delete:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.size-cell {
+  font-family: 'SF Mono', 'Roboto Mono', monospace;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.date-cell {
+  color: #64748b;
+  white-space: nowrap;
+  font-size: 0.875rem;
+}
+
+/* New styles for empty state */
+.empty-state {
+  padding: 64px 32px;
+  text-align: center;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  color: #94a3b8;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 4px 6px rgba(148, 163, 184, 0.1));
+}
+
+.empty-state-text {
+  font-size: 1.125rem;
+  color: #64748b;
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+/* Enhance breadcrumb styling */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+  padding: 16px 24px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+/* ...rest of existing styles... */
