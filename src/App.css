@@ -1,3 +1,5 @@
+/* Update font styles to use Oxanium */
+
 .login-wrapper {
   min-height: 100vh;
   display: flex;
@@ -23,12 +25,14 @@
 
 .btn-primary {
   transition: all 0.3s ease;
+  font-weight: 400;
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
 }
 
+/* Navbar styling with Oxanium font */
 .navbar-custom {
   background: rgba(255, 255, 255, 0.95) !important;
   backdrop-filter: blur(10px);
@@ -46,6 +50,7 @@
 .navbar-custom .navbar-nav .nav-link {
   padding: 0.5rem 1rem;
   color: #333;
+  font-weight: 400;
 }
 
 .navbar-custom .navbar-nav .nav-link:hover {
@@ -65,7 +70,7 @@ body {
 
 .brand-text {
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 500;
   color: #232f3e;
   letter-spacing: -0.5px;
 }
@@ -112,6 +117,7 @@ body {
   border-radius: 6px;
   transition: all 0.3s ease !important;
   position: relative;
+  font-weight: 400;
 }
 
 .nav-link-custom:hover {
@@ -122,6 +128,7 @@ body {
 .nav-link-custom.active {
   background: rgba(0, 123, 255, 0.15);
   color: #007bff !important;
+  font-weight: 500;
 }
 
 .nav-icon {
@@ -154,7 +161,7 @@ body {
 }
 
 .username {
-  font-weight: 500;
+  font-weight: 400;
   color: #2c3e50;
 }
 
@@ -274,4 +281,26 @@ body {
   margin: 0 auto;
   padding-left: 20px;
   padding-right: 20px;
+}
+
+/* Add specific header styles for different sections */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Oxanium', sans-serif;
+}
+
+h1 {
+  font-weight: 500;
+}
+
+h2, h3 {
+  font-weight: 400;
+}
+
+h4, h5, h6 {
+  font-weight: 400;
+}
+
+/* Card titles */
+.card-title {
+  font-weight: 500;
 }

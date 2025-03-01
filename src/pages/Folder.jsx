@@ -1,223 +1,150 @@
-import { useState, useEffect } from 'react';
-import { Breadcrumb, Table } from 'react-bootstrap';
-import { FaFolder, FaFile, FaArrowUp, FaDownload, FaCheckCircle } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { Container, Form, Button, Modal } from 'react-bootstrap';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { 
+  listS3Objects, 
+  downloadFolder, 
+  getS3DownloadUrl, 
+  renameS3Object
+} from '../services/s3Service';
+import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { listS3Objects, getS3DownloadUrl, downloadFolder, getFolderSize, formatFileSize } from '../services/s3Service';
-import folderManagementImage from '../images/4569774.jpg';
-import './Folder.css';
-
-const EXCLUDED_FILES = ['history-log.json'];
+import { useTransfer } from '../contexts/TransferContext';
+import FileBrowser from '../components/FileBrowser';
 
 const Folder = () => {
   const [currentPath, setCurrentPath] = useState('');
-  const [contents, setContents] = useState([]);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [folderSizes, setFolderSizes] = useState({});
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [itemToRename, setItemToRename] = useState(null);
+  const [newName, setNewName] = useState('');
+  
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const { showToast } = useToast();
-
+  const transferContext = useTransfer();
+  
+  // Fetch items on component mount and path change
   useEffect(() => {
-    loadFolderContents(currentPath);
-  }, [currentPath]);
-
-  useEffect(() => {
-    const loadFolderSizes = async () => {
-      const sizes = {};
-      for (const item of contents) {
-        if (item.type === 'folder') {
-          sizes[item.key] = await getFolderSize(item.key);
-        }
-      }
-      setFolderSizes(sizes);
-    };
-
-    if (contents.length > 0) {
-      loadFolderSizes();
-    }
-  }, [contents]);
-
+    const queryParams = new URLSearchParams(location.search);
+    const path = queryParams.get('path') || '';
+    setCurrentPath(path);
+    loadFolderContents(path);
+  }, [location]);
+  
+  // Load folder contents
   const loadFolderContents = async (path) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const items = await listS3Objects(path);
-      setContents(items);
+      const result = await listS3Objects(path);
+      setItems(result);
     } catch (error) {
-      showToast('Failed to load folder contents', 'error');
+      showToast(`Error loading folder: ${error.message}`, 'error');
     } finally {
       setLoading(false);
     }
   };
-
+  
+  // Handle navigation to a folder
   const handleNavigate = (path) => {
-    // Ensure path ends with '/' for folders
-    const normalizedPath = path.endsWith('/') ? path : `${path}/`;
-    setCurrentPath(normalizedPath);
+    navigate(`/folder${path ? `?path=${encodeURIComponent(path)}` : ''}`);
   };
-
-  const handleBack = () => {
-    // Remove trailing slash first, then get parent path
-    const withoutTrailingSlash = currentPath.slice(0, -1);
-    const parentPath = withoutTrailingSlash.substring(0, withoutTrailingSlash.lastIndexOf('/') + 1);
-    setCurrentPath(parentPath);
-  };
-
-  const handleDownload = async (item) => {
+  
+  // Handle download
+  const handleDownload = async (item, transferCtx = null) => {
     try {
-      if (item.type === 'file' && EXCLUDED_FILES.includes(item.name)) {
-        showToast('This file cannot be downloaded', 'warning');
-        return;
-      }
-
-      showToast(`Preparing ${item.type} download...`, 'info');
-
       if (item.type === 'folder') {
-        await downloadFolder(item.key);
+        await downloadFolder(item.key, transferCtx || transferContext);
       } else {
-        const url = await getS3DownloadUrl(item.key, item.size);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = item.name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        const url = await getS3DownloadUrl(item.key, item.size, transferCtx || transferContext);
+        // If we're using the transfer context, download is handled there
+        if (url) {
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = item.name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
       }
-
-      showToast(`${item.type} download started`, 'success');
+      showToast(`Download started for ${item.name}`, 'success');
     } catch (error) {
-      console.error('Download error:', error);
-      showToast(`Failed to download ${item.type}`, 'error');
+      if (error.message === 'Download cancelled by user') {
+        showToast('Download cancelled', 'info');
+      } else {
+        showToast(`Download failed: ${error.message}`, 'error');
+      }
+    }
+  };
+  
+  // Handle rename
+  const handleRename = (item) => {
+    setItemToRename(item);
+    setNewName(item.name);
+    setShowRenameModal(true);
+  };
+  
+  const submitRename = async () => {
+    if (!newName || newName === itemToRename.name) {
+      setShowRenameModal(false);
+      return;
+    }
+    
+    try {
+      await renameS3Object(itemToRename, newName);
+      showToast(`${itemToRename.type === 'folder' ? 'Folder' : 'File'} renamed successfully!`, 'success');
+      loadFolderContents(currentPath); // Reload contents
+      setShowRenameModal(false);
+    } catch (error) {
+      showToast(`Rename failed: ${error.message}`, 'error');
     }
   };
 
-  const getBreadcrumbItems = () => {
-    if (!currentPath) return [{ name: 'Root', path: '' }];
-
-    const parts = currentPath.split('/').filter(Boolean);
-    return [
-      { name: 'Root', path: '' },
-      ...parts.map((part, index) => ({
-        name: part,
-        path: parts.slice(0, index + 1).join('/') + '/'
-      }))
-    ];
-  };
-
   return (
-    <div className="folder-container">
-      <div className="folder-header">
-        <h2 className="folder-title">File Browser</h2>
-        <Breadcrumb className="custom-breadcrumb">
-          <Breadcrumb.Item 
-            onClick={() => handleNavigate('')}
-            className="breadcrumb-hover"
+    <Container className="py-4">
+      <FileBrowser 
+        currentPath={currentPath}
+        items={items}
+        isLoading={loading}
+        onNavigate={handleNavigate}
+        onDownload={handleDownload}
+        onRename={handleRename}
+      />
+      
+      {/* Rename Modal */}
+      <Modal show={showRenameModal} onHide={() => setShowRenameModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Rename {itemToRename?.type === 'folder' ? 'Folder' : 'File'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Group>
+            <Form.Label>New name</Form.Label>
+            <Form.Control
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              autoFocus
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowRenameModal(false)}>
+            Cancel
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={submitRename}
+            disabled={!newName || newName === itemToRename?.name}
           >
-            <FaFolder className="me-2" />Root
-          </Breadcrumb.Item>
-          {currentPath.split('/').filter(Boolean).map((part, index, array) => (
-            <Breadcrumb.Item
-              key={part}
-              onClick={() => handleNavigate(array.slice(0, index + 1).join('/'))}
-              active={index === array.length - 1}
-              className="breadcrumb-hover"
-            >
-              {part}
-            </Breadcrumb.Item>
-          ))}
-        </Breadcrumb>
-      </div>
-
-      <div className="folder-content-wrapper">
-        <div className="table-responsive custom-table-container">
-          <Table className="custom-table">
-            <thead>
-              <tr>
-                <th style={{ width: '50%' }}>Name</th>
-                <th style={{ width: '20%' }}>Size</th>
-                <th style={{ width: '30%' }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentPath && (
-                <tr className="back-row" onClick={handleBack}>
-                  <td colSpan="3">
-                    <div className="d-flex align-items-center">
-                      <FaArrowUp className="me-2 back-icon" />
-                      <span className="back-text">Back to parent folder</span>
-                    </div>
-                  </td>
-                </tr>
-              )}
-              {contents.map((item) => (
-                <tr 
-                  key={item.key} 
-                  className={item.type === 'folder' ? 'folder-row' : 'file-row'}
-                >
-                  <td>
-                    <div 
-                      className={item.type === 'folder' ? 'folder-name' : 'file-name'}
-                      onClick={() => item.type === 'folder' && handleNavigate(item.key)}
-                    >
-                      {item.type === 'folder' ? (
-                        <FaFolder className="folder-icon" />
-                      ) : (
-                        <FaFile className="file-icon" />
-                      )}
-                      <span>{item.name}</span>
-                    </div>
-                  </td>
-                  <td>
-                    {item.type === 'folder' 
-                      ? folderSizes[item.key] 
-                        ? formatFileSize(folderSizes[item.key]) 
-                        : 'Calculating...'
-                      : formatFileSize(item.size || 0)
-                    }
-                  </td>
-                  <td>
-                    <button
-                      className={`download-button ${item.type === 'folder' ? 'folder-download' : 'file-download'}`}
-                      onClick={() => handleDownload(item)}
-                      title={`Download ${item.type}`}
-                    >
-                      <FaDownload className="download-icon" />
-                      <span className="download-text">
-                        {item.type === 'folder' ? 'Download ZIP' : 'Download'}
-                      </span>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </div>
-      </div>
-
-      <div className="welcome-section mt-4">
-        <div className="row align-items-center">
-          <div className="col-lg-6">
-            <h2 className="welcome-title mb-4">Manage Your Files</h2>
-            <p className="welcome-text">
-              Seamlessly organize and access your files and folders in AWS S3 storage. 
-              Enjoy secure, efficient data management with enterprise-grade security and user-friendly features.
-            </p>
-            <ul className="feature-list">
-              <li><FaCheckCircle className="feature-icon" /> Robust Security</li>
-              <li><FaCheckCircle className="feature-icon" /> Intuitive Navigation</li>
-              <li><FaCheckCircle className="feature-icon" /> Fast Transfers</li>
-              <li><FaCheckCircle className="feature-icon" /> Streamlined Organization</li>
-            </ul>
-          </div>
-          <div className="col-lg-6">
-            <div className="welcome-image">
-              <img src={folderManagementImage} alt="Folder Management Illustration" className="img-fluid" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="folder-bottom-section">
-        {/* Content will be added later */}
-      </div>
-    </div>
+            Rename
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </Container>
   );
 };
 

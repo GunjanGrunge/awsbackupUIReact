@@ -1,7 +1,7 @@
 .history-container {
-  padding: 2rem;
+  padding: 20px;
   max-width: 1200px;
-  margin: 64px auto 0;
+  margin: 0 auto;
 }
 
 .history-header {
@@ -408,3 +408,61 @@
 }
 
 /* ...rest of existing styles... */
+
+.history-card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  background-color: #fff;
+}
+
+.history-card .card-header {
+  background-color: transparent;
+  border-bottom: 1px solid #e9ecef;
+  padding: 1.5rem;
+}
+
+.history-card .card-header h2 {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.table th {
+  font-weight: 500;
+  color: #495057;
+  border-bottom-width: 1px;
+}
+
+.table td {
+  vertical-align: middle;
+  padding: 1rem;
+}
+
+.badge {
+  padding: 0.5em 0.8em;
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+
+.text-break {
+  word-break: break-word;
+}
+
+.text-nowrap {
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .history-container {
+    padding: 10px;
+  }
+  
+  .table {
+    font-size: 0.9rem;
+  }
+  
+  .history-card .card-header {
+    padding: 1rem;
+  }
+}
