@@ -10,8 +10,8 @@ import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import JSZip from 'jszip';
 
-// Configure S3 client with browser-compatible settings
-const s3Client = new S3Client({
+// Export s3Client at the top
+export const s3Client = new S3Client({
   region: import.meta.env.VITE_REGION,
   credentials: {
     accessKeyId: import.meta.env.VITE_ACCESS_KEY_ID,
@@ -836,7 +836,6 @@ export default defineConfig({
 */
 
 export { 
-  s3Client,
   uploadToS3,
   listS3Objects,
   deleteS3Object,
