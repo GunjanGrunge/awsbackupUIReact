@@ -10,18 +10,22 @@ export default defineConfig({
       process: 'process/browser',
       util: 'util',
       stream: 'stream-browserify',
+      './runtimeConfig': './runtimeConfig.browser',
     },
   },
   define: {
-    'process.env': {},
-    global: 'globalThis',
+    'process.env.NODE_DEBUG': 'false',
+    global: 'window',
   },
   build: {
+    outDir: 'dist',
+    sourcemap: true,
     rollupOptions: {
       external: ['aws-crt'],
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
+          aws: ['@aws-sdk/client-s3', '@aws-sdk/lib-storage']
         },
       },
     },
