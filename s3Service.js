@@ -175,7 +175,7 @@ const deleteS3Object = async (key) => {
 };
 
 // Add this function for renaming folders/files in S3
-const renameS3Object = async (item, newName) => {
+export const renameS3Object = async (item, newName) => {
   try {
     if (!item || !item.key || !newName) {
       throw new Error('Invalid parameters for rename operation');
@@ -848,6 +848,5 @@ export {
   formatFileSize,
   getBucketMetrics,
   getDetailedFolderStructure,
-  getAllObjects,
-  renameS3Object
+  getAllObjects
 };

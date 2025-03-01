@@ -37,7 +37,7 @@
     "react-dropzone": "^14.3.5",
     "react-icons": "^5.5.0",
     "react-redux": "^9.2.0",
-    "react-router-dom": "^7.1.1",
+    "react-router-dom": "^6.22.3",
     "react-toastify": "^11.0.2",
     "stream-browserify": "^3.0.0",
     "util": "^0.12.5"
@@ -69,5 +69,8 @@
     "constants": "constants-browserify",
     "zlib": "browserify-zlib",
     "readable-stream": "readable-stream"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

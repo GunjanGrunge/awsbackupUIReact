@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Container, Form, Button, Modal } from 'react-bootstrap';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-  listS3Objects,  
+  listS3Objects, 
+  uploadToS3, 
+  deleteS3Object, 
   downloadFolder, 
-  getS3DownloadUrl, 
-  renameS3Object
+  getS3DownloadUrl,
 } from '../services/s3Service';
+import { renameS3Object } from '../services/s3Service';  // Add separate import
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useTransfer } from '../contexts/TransferContext';
