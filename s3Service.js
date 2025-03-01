@@ -11,7 +11,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import JSZip from 'jszip';
 
 // Configure S3 client with browser-compatible settings
-export const s3Client = new S3Client({
+const s3Client = new S3Client({
   region: import.meta.env.VITE_REGION,
   credentials: {
     accessKeyId: import.meta.env.VITE_ACCESS_KEY_ID,
@@ -30,7 +30,7 @@ export const s3Client = new S3Client({
 const EXCLUDED_FILES = ['history-log.json', 'ai-history-log.json'];
 
 // Update upload configuration for browser compatibility
-export const uploadToS3 = async (file, folderPath, onProgress) => {
+const uploadToS3 = async (file, folderPath, onProgress) => {
   try {
     if (!file) {
       throw new Error('No file provided');
@@ -90,7 +90,7 @@ export const uploadToS3 = async (file, folderPath, onProgress) => {
   }
 };
 
-export const listS3Objects = async (prefix = '') => {
+const listS3Objects = async (prefix = '') => {
   try {
     // Ensure prefix ends with / if it's not empty
     const normalizedPrefix = prefix ? prefix.endsWith('/') ? prefix : `${prefix}/` : '';
@@ -139,7 +139,7 @@ export const listS3Objects = async (prefix = '') => {
 };
 
 // Add new helper function to get all objects including those in subfolders
-export const getAllObjects = async (prefix = '') => {
+const getAllObjects = async (prefix = '') => {
   const allObjects = [];
   let continuationToken;
 
@@ -160,7 +160,7 @@ export const getAllObjects = async (prefix = '') => {
   return allObjects;
 };
 
-export const deleteS3Object = async (key) => {
+const deleteS3Object = async (key) => {
   try {
     const command = new DeleteObjectCommand({
       Bucket: import.meta.env.VITE_BUCKET_NAME,
@@ -175,7 +175,7 @@ export const deleteS3Object = async (key) => {
 };
 
 // Add this function for renaming folders/files in S3
-export const renameS3Object = async (item, newName) => {
+const renameS3Object = async (item, newName) => {
   try {
     if (!item || !item.key || !newName) {
       throw new Error('Invalid parameters for rename operation');
@@ -326,7 +326,7 @@ const copyS3Object = async (sourceKey, destinationKey) => {
 };
 
 // Update download handling for browser compatibility
-export const getS3DownloadUrl = async (key, size, transferContext = null) => {
+const getS3DownloadUrl = async (key, size, transferContext = null) => {
   try {
     // Get the file size if not provided
     if (!size) {
@@ -439,7 +439,7 @@ const streamToBuffer = async (stream) => {
 };
 
 // Update download folder to support progress tracking
-export const downloadFolder = async (folderKey, transferContext = null) => {
+const downloadFolder = async (folderKey, transferContext = null) => {
   try {
     const command = new ListObjectsV2Command({
       Bucket: import.meta.env.VITE_BUCKET_NAME,
@@ -592,7 +592,7 @@ export const downloadFolder = async (folderKey, transferContext = null) => {
   }
 };
 
-export const getFolderSize = async (folderKey) => {
+const getFolderSize = async (folderKey) => {
   try {
     const allObjects = await getAllObjects(folderKey);
     const totalSize = allObjects.reduce((acc, item) => acc + item.Size, 0);
@@ -603,7 +603,7 @@ export const getFolderSize = async (folderKey) => {
   }
 };
 
-export const getHistoryLog = async () => {
+const getHistoryLog = async () => {
   try {
     const command = new GetObjectCommand({
       Bucket: import.meta.env.VITE_BUCKET_NAME,
@@ -666,7 +666,7 @@ const updateHistoryLog = async (newEntry) => {
   }
 };
 
-export const logActivity = async (activity) => {
+const logActivity = async (activity) => {
   try {
     const currentHistory = await getHistoryLog();
     const newEntry = {
@@ -694,7 +694,7 @@ export const logActivity = async (activity) => {
   }
 };
 
-export const clearHistoryLog = async () => {
+const clearHistoryLog = async () => {
   try {
     const command = new PutObjectCommand({
       Bucket: import.meta.env.VITE_BUCKET_NAME,
@@ -711,7 +711,7 @@ export const clearHistoryLog = async () => {
 };
 
 // Helper function to format file size
-export const formatFileSize = (bytes) => {
+const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -719,7 +719,7 @@ export const formatFileSize = (bytes) => {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 };
 
-export const getBucketMetrics = async () => {
+const getBucketMetrics = async () => {
   try {
     const items = await listS3Objects();
     
@@ -757,7 +757,7 @@ export const getBucketMetrics = async () => {
 };
 
 // Add this new function for AI analysis
-export const getDetailedFolderStructure = async (prefix = '') => {
+const getDetailedFolderStructure = async (prefix = '') => {
   try {
     const allObjects = await getAllObjects(prefix);
     const structure = {};
@@ -835,7 +835,7 @@ export default defineConfig({
 })
 */
 
-export {
+export { 
   s3Client,
   uploadToS3,
   listS3Objects,
@@ -850,5 +850,5 @@ export {
   getBucketMetrics,
   getDetailedFolderStructure,
   getAllObjects,
-  renameS3Object  // Add this line
+  renameS3Object
 };
