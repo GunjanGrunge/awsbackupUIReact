@@ -3,13 +3,14 @@ import {
   ListObjectsV2Command, 
   DeleteObjectCommand,
   GetObjectCommand,
-  PutObjectCommand
+  PutObjectCommand,
+  CopyObjectCommand
 } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import JSZip from 'jszip';
 
-// Configure S3 client with browser-compatible settings
+// Export s3Client at the top
 export const s3Client = new S3Client({
   region: import.meta.env.VITE_REGION,
   credentials: {
@@ -29,9 +30,8 @@ export const s3Client = new S3Client({
 const EXCLUDED_FILES = ['history-log.json', 'ai-history-log.json'];
 
 // Update upload configuration for browser compatibility
-export const uploadToS3 = async (file, folderName) => {
+const uploadToS3 = async (file, folderPath, onProgress) => {
   try {
-    // Enhanced file validation
     if (!file) {
       throw new Error('No file provided');
     }
@@ -40,13 +40,17 @@ export const uploadToS3 = async (file, folderName) => {
       throw new Error('Invalid file type - must be File or Blob');
     }
 
-    if (!file.name || !file.type || file.size === undefined) {
-      throw new Error('File object missing required properties');
+    if (!file.name) {
+      throw new Error('File must have a name');
     }
 
-    const key = folderName ? `${folderName}/${file.name}` : file.name;
+    // Clean up the folder path to remove any leading "./" and ensure proper structure
+    let cleanFolderPath = folderPath
+      .replace(/^\.\//, '') // Remove leading ./
+      .replace(/^\//, '');  // Remove leading /
 
-    // Create a proper Blob if needed
+    // If path is empty, use just the file name
+    const key = cleanFolderPath || file.name;
     const fileBlob = file instanceof Blob ? file : new Blob([file], { type: file.type });
 
     const upload = new Upload({
@@ -57,34 +61,36 @@ export const uploadToS3 = async (file, folderName) => {
         Body: fileBlob,
         ContentType: file.type || 'application/octet-stream',
       },
-      queueSize: 4, // Reduced for browser
-      partSize: 5 * 1024 * 1024, // 5MB parts
-      leavePartsOnError: false, // Clean up failed uploads
+      queueSize: 4,
+      partSize: 5 * 1024 * 1024,
+      leavePartsOnError: false
     });
 
+    // Add progress handling
     upload.on("httpUploadProgress", (progress) => {
-      const percentage = Math.round((progress.loaded / progress.total) * 100);
-      // Progress can be used for UI updates if needed
+      if (onProgress) {
+        onProgress(progress);
+      }
     });
 
     const response = await upload.done();
-
+    
     // Log the upload activity
     await logActivity({
       action: 'Upload',
-      itemName: file.name,
+      itemName: key,
       size: file.size,
       fileCount: 1
     });
 
     return response;
   } catch (error) {
-    console.error('Upload error occurred');
+    console.error('Upload error occurred:', error);
     throw error;
   }
 };
 
-export const listS3Objects = async (prefix = '') => {
+const listS3Objects = async (prefix = '') => {
   try {
     // Ensure prefix ends with / if it's not empty
     const normalizedPrefix = prefix ? prefix.endsWith('/') ? prefix : `${prefix}/` : '';
@@ -133,7 +139,7 @@ export const listS3Objects = async (prefix = '') => {
 };
 
 // Add new helper function to get all objects including those in subfolders
-export const getAllObjects = async (prefix = '') => {
+const getAllObjects = async (prefix = '') => {
   const allObjects = [];
   let continuationToken;
 
@@ -154,7 +160,7 @@ export const getAllObjects = async (prefix = '') => {
   return allObjects;
 };
 
-export const deleteS3Object = async (key) => {
+const deleteS3Object = async (key) => {
   try {
     const command = new DeleteObjectCommand({
       Bucket: import.meta.env.VITE_BUCKET_NAME,
@@ -168,7 +174,159 @@ export const deleteS3Object = async (key) => {
   }
 };
 
-export const getS3DownloadUrl = async (key, size) => {
+// Add this function for renaming folders/files in S3
+export const renameS3Object = async (item, newName) => {
+  try {
+    if (!item || !item.key || !newName) {
+      throw new Error('Invalid parameters for rename operation');
+    }
+    
+    const isFolder = item.type === 'folder';
+    let sourceKey = item.key;
+    let oldName = item.name;
+    
+    // For folders, we need to copy all objects with the prefix and delete old ones
+    if (isFolder) {
+      // Get all objects in the folder
+      const objects = await getAllObjects(sourceKey);
+      
+      if (objects.length === 0) {
+        console.log('No objects found in folder, creating empty folder with new name');
+        // For empty folders, create a placeholder file to maintain the folder
+        const parentPath = sourceKey.split('/').slice(0, -2).join('/');
+        const newKey = parentPath ? `${parentPath}/${newName}/` : `${newName}/`;
+        
+        // Create an empty placeholder to maintain the folder structure
+        await s3Client.send(new PutObjectCommand({
+          Bucket: import.meta.env.VITE_BUCKET_NAME,
+          Key: newKey + '.placeholder',
+          Body: '',
+          ContentType: 'application/x-empty'
+        }));
+        
+        return newKey;
+      }
+      
+      // Track successful copies to ensure we only delete after successful copy
+      const successfulCopies = [];
+      
+      // Process each object in the folder
+      for (const object of objects) {
+        const oldKey = object.Key;
+        // Extract the path after the folder name
+        const pathWithinFolder = oldKey.substring(sourceKey.length);
+        
+        // Determine parent directory path
+        const pathSegments = sourceKey.split('/');
+        pathSegments.pop(); // Remove trailing empty string from split
+        pathSegments.pop(); // Remove folder name
+        const parentPath = pathSegments.join('/');
+        
+        // Create new key with the new folder name
+        const newKey = parentPath ? 
+          `${parentPath}/${newName}/${pathWithinFolder}` : 
+          `${newName}/${pathWithinFolder}`;
+        
+        console.log(`Copying from: ${oldKey} to: ${newKey}`);
+        
+        try {
+          // Copy the object to the new location
+          await copyS3Object(oldKey, newKey);
+          successfulCopies.push({ oldKey, newKey });
+        } catch (copyError) {
+          console.error('Error copying object during rename:', copyError);
+          
+          // If any copy fails, undo the previous copies
+          for (const { newKey } of successfulCopies) {
+            try {
+              await deleteS3Object(newKey);
+            } catch (undoError) {
+              console.error('Error undoing copy operation:', undoError);
+            }
+          }
+          
+          throw new Error('Failed to rename folder: Error during copy operation');
+        }
+      }
+      
+      // After all copies are successful, delete the original objects
+      for (const { oldKey } of successfulCopies) {
+        await deleteS3Object(oldKey);
+      }
+      
+      // Return the new folder key
+      const pathSegments = sourceKey.split('/');
+      pathSegments.pop(); // Remove trailing empty string
+      pathSegments.pop(); // Remove old folder name
+      pathSegments.push(newName); // Add new folder name
+      pathSegments.push(''); // Add trailing slash
+      return pathSegments.join('/');
+    } else {
+      // For files, we just rename the single file
+      const pathParts = sourceKey.split('/');
+      pathParts.pop(); // Remove filename
+      const filePath = pathParts.length ? `${pathParts.join('/')}/` : '';
+      
+      // Create new key with the new name
+      const newKey = `${filePath}${newName}`;
+      
+      // Copy the file to the new location
+      await copyS3Object(sourceKey, newKey);
+      
+      // Delete the old file
+      await deleteS3Object(sourceKey);
+      
+      return newKey;
+    }
+  } catch (error) {
+    console.error('Error renaming object:', error);
+    throw error;
+  }
+};
+
+// Helper function to copy objects in S3
+const copyS3Object = async (sourceKey, destinationKey) => {
+  try {
+    console.log(`Copying from ${sourceKey} to ${destinationKey}`);
+    
+    // Use CopyObjectCommand instead of manually copying with PutObjectCommand
+    const copyParams = {
+      Bucket: import.meta.env.VITE_BUCKET_NAME,
+      CopySource: `${import.meta.env.VITE_BUCKET_NAME}/${encodeURIComponent(sourceKey)}`,
+      Key: destinationKey
+    };
+    
+    try {
+      const headCommand = new GetObjectCommand({
+        Bucket: import.meta.env.VITE_BUCKET_NAME,
+        Key: sourceKey
+      });
+      
+      const response = await s3Client.send(headCommand);
+      const contentType = response.ContentType;
+      
+      // Add content type to copy parameters if available
+      if (contentType) {
+        copyParams.ContentType = contentType;
+      }
+    } catch (error) {
+      // If there's an error getting the content type, just proceed with the copy
+      console.log("Could not determine content type for copy, using default");
+    }
+    
+    // Use CopyObjectCommand for better performance and reliability
+    const command = new CopyObjectCommand(copyParams);
+    await s3Client.send(command);
+    
+    return destinationKey;
+  } catch (error) {
+    console.error(`Error copying object from ${sourceKey} to ${destinationKey}:`, error);
+    throw error;
+  }
+};
+
+// Update download handling for browser compatibility
+const getS3DownloadUrl = async (key, size, transferContext = null) => {
   try {
     // Get the file size if not provided
     if (!size) {
@@ -194,6 +352,76 @@ export const getS3DownloadUrl = async (key, size) => {
     });
 
     const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    
+    // If transfer context is provided, we'll need to manually track the download
+    if (transferContext) {
+      const fileName = key.split('/').pop();
+      const controller = new AbortController();
+      const signal = controller.signal;
+      
+      const transferId = transferContext.addTransfer({
+        name: fileName,
+        type: 'download',
+        totalBytes: size,
+        controller
+      });
+      
+      // Create a download link but don't automatically click it
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      
+      // Set up XHR to track progress
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', url, true);
+      xhr.responseType = 'blob';
+      
+      xhr.onprogress = (event) => {
+        if (event.lengthComputable) {
+          transferContext.updateTransferProgress(
+            transferId, 
+            event.loaded, 
+            event.total,
+            event
+          );
+        }
+      };
+      
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          // Download completed successfully
+          transferContext.completeTransfer(transferId);
+          
+          const blob = new Blob([xhr.response], { type: 'application/octet-stream' });
+          const objectUrl = URL.createObjectURL(blob);
+          
+          a.href = objectUrl;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(objectUrl);
+        } else {
+          transferContext.errorTransfer(transferId, new Error('Download failed'));
+        }
+      };
+      
+      xhr.onerror = () => {
+        transferContext.errorTransfer(transferId, new Error('Download failed'));
+      };
+      
+      xhr.onabort = () => {
+        // Do nothing, the transfer context already handles this
+      };
+      
+      // Set up abort handler
+      signal.addEventListener('abort', () => {
+        xhr.abort();
+      });
+      
+      xhr.send();
+      return null; // We're handling the download ourselves
+    }
+    
     return url;
   } catch (error) {
     console.error('Error generating download URL:', error);
@@ -210,8 +438,8 @@ const streamToBuffer = async (stream) => {
   return Buffer.concat(chunks);
 };
 
-// Update download handling for browser compatibility
-export const downloadFolder = async (folderKey) => {
+// Update download folder to support progress tracking
+const downloadFolder = async (folderKey, transferContext = null) => {
   try {
     const command = new ListObjectsV2Command({
       Bucket: import.meta.env.VITE_BUCKET_NAME,
@@ -225,6 +453,23 @@ export const downloadFolder = async (folderKey) => {
     const totalSize = contents.reduce((acc, item) => acc + item.Size, 0);
     const fileCount = contents.length;
 
+    // Create abort controller for cancellation
+    const controller = new AbortController();
+    
+    // Add to transfer context if provided
+    let transferId;
+    const folderName = folderKey.split('/').slice(-2)[0];
+    
+    if (transferContext) {
+      transferId = transferContext.addTransfer({
+        name: `${folderName}.zip`,
+        type: 'download',
+        totalBytes: totalSize,
+        controller,
+        fileCount
+      });
+    }
+
     // Log the download activity first
     await logActivity({
       action: 'Download',
@@ -233,57 +478,121 @@ export const downloadFolder = async (folderKey) => {
       fileCount: fileCount
     });
 
-    const zip = new JSZip();
+    try {
+      const zip = new JSZip();
+      let loadedBytes = 0;
 
-    for (const item of contents) {
-      if (EXCLUDED_FILES.includes(item.Key.split('/').pop())) continue;
-
-      const getCommand = new GetObjectCommand({
-        Bucket: import.meta.env.VITE_BUCKET_NAME,
-        Key: item.Key
-      });
-      
-      const { Body } = await s3Client.send(getCommand);
-      
-      // Handle streaming in browser environment
-      let data;
-      if (Body instanceof ReadableStream) {
-        const reader = Body.getReader();
-        const chunks = [];
-        
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
+      for (const item of contents) {
+        if (controller.signal.aborted) {
+          throw new Error('Download cancelled by user');
         }
         
-        data = new Uint8Array(chunks.reduce((acc, chunk) => acc.concat(Array.from(chunk)), []));
-      } else {
-        data = await Body.transformToByteArray();
+        if (EXCLUDED_FILES.includes(item.Key.split('/').pop())) continue;
+
+        const getCommand = new GetObjectCommand({
+          Bucket: import.meta.env.VITE_BUCKET_NAME,
+          Key: item.Key
+        });
+        
+        const { Body } = await s3Client.send(getCommand);
+        
+        // Handle streaming in browser environment
+        let data;
+        if (Body instanceof ReadableStream) {
+          const reader = Body.getReader();
+          const chunks = [];
+          let itemLoaded = 0;
+          
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            
+            // Update progress
+            itemLoaded += value.length;
+            loadedBytes += value.length;
+            
+            if (transferContext && transferId) {
+              transferContext.updateTransferProgress(transferId, loadedBytes, totalSize);
+            }
+          }
+          
+          data = new Uint8Array(chunks.reduce((acc, chunk) => acc.concat(Array.from(chunk)), []));
+        } else {
+          data = await Body.transformToByteArray();
+          
+          // Update progress after each file
+          loadedBytes += item.Size;
+          if (transferContext && transferId) {
+            transferContext.updateTransferProgress(transferId, loadedBytes, totalSize);
+          }
+        }
+
+        const relativePath = item.Key.substring(folderKey.length);
+        zip.file(relativePath, data);
       }
 
-      const relativePath = item.Key.substring(folderKey.length);
-      zip.file(relativePath, data);
+      if (controller.signal.aborted) {
+        throw new Error('Download cancelled by user');
+      }
+
+      const content = await zip.generateAsync({ 
+        type: 'blob',
+        onUpdate: (metadata) => {
+          if (transferContext && transferId) {
+            // During zip generation, we're already at file download completion
+            // so we'll map the compression progress from 90% to 100%
+            const zipProgress = metadata.percent;
+            const overallProgress = 90 + (zipProgress * 0.1);
+            transferContext.updateTransfer(transferId, { 
+              progress: Math.round(overallProgress) 
+            });
+          }
+        }
+      });
+
+      if (transferContext && transferId) {
+        transferContext.completeTransfer(transferId);
+      }
+      
+      const url = URL.createObjectURL(content);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${folderName}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      // Handle abort error differently
+      if (error.name === 'AbortError' || error.message.includes('cancelled')) {
+        console.log('Download aborted by user');
+        
+        if (transferContext && transferId) {
+          transferContext.updateTransfer(transferId, { 
+            status: 'cancelled',
+            progress: 0
+          });
+        }
+      } else {
+        // Handle other errors
+        console.error('Error downloading folder:', error);
+        
+        if (transferContext && transferId) {
+          transferContext.errorTransfer(transferId, error);
+        }
+      }
+      
+      throw error;
     }
-
-    const content = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(content);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${folderKey.split('/').slice(-2)[0]}.zip`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
   } catch (error) {
-    console.error('Error downloading folder');
+    console.error('Error in downloadFolder:', error);
     throw error;
   }
 };
 
-export const getFolderSize = async (folderKey) => {
+const getFolderSize = async (folderKey) => {
   try {
     const allObjects = await getAllObjects(folderKey);
     const totalSize = allObjects.reduce((acc, item) => acc + item.Size, 0);
@@ -294,7 +603,7 @@ export const getFolderSize = async (folderKey) => {
   }
 };
 
-export const getHistoryLog = async () => {
+const getHistoryLog = async () => {
   try {
     const command = new GetObjectCommand({
       Bucket: import.meta.env.VITE_BUCKET_NAME,
@@ -339,8 +648,8 @@ const updateHistoryLog = async (newEntry) => {
     // Get current history
     const currentHistory = await getHistoryLog();
     
-    // Add new entry
-    const updatedHistory = [...currentHistory, newEntry];
+    // Add new entry at the beginning
+    const updatedHistory = [newEntry, ...currentHistory];
     
     // Update file in S3
     const command = new PutObjectCommand({
@@ -357,7 +666,7 @@ const updateHistoryLog = async (newEntry) => {
   }
 };
 
-export const logActivity = async (activity) => {
+const logActivity = async (activity) => {
   try {
     const currentHistory = await getHistoryLog();
     const newEntry = {
@@ -368,7 +677,8 @@ export const logActivity = async (activity) => {
       fileCount: activity.fileCount || 1
     };
     
-    const updatedHistory = [...currentHistory, newEntry];
+    // Add new entry at the beginning of the array
+    const updatedHistory = [newEntry, ...currentHistory];
     
     await s3Client.send(new PutObjectCommand({
       Bucket: import.meta.env.VITE_BUCKET_NAME,
@@ -384,7 +694,7 @@ export const logActivity = async (activity) => {
   }
 };
 
-export const clearHistoryLog = async () => {
+const clearHistoryLog = async () => {
   try {
     const command = new PutObjectCommand({
       Bucket: import.meta.env.VITE_BUCKET_NAME,
@@ -401,7 +711,7 @@ export const clearHistoryLog = async () => {
 };
 
 // Helper function to format file size
-export const formatFileSize = (bytes) => {
+const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -409,7 +719,7 @@ export const formatFileSize = (bytes) => {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 };
 
-export const getBucketMetrics = async () => {
+const getBucketMetrics = async () => {
   try {
     const items = await listS3Objects();
     
@@ -447,7 +757,7 @@ export const getBucketMetrics = async () => {
 };
 
 // Add this new function for AI analysis
-export const getDetailedFolderStructure = async (prefix = '') => {
+const getDetailedFolderStructure = async (prefix = '') => {
   try {
     const allObjects = await getAllObjects(prefix);
     const structure = {};
@@ -525,3 +835,18 @@ export default defineConfig({
 })
 */
 
+export { 
+  uploadToS3,
+  listS3Objects,
+  deleteS3Object,
+  getS3DownloadUrl,
+  downloadFolder,
+  getFolderSize,
+  getHistoryLog,
+  logActivity,
+  clearHistoryLog,
+  formatFileSize,
+  getBucketMetrics,
+  getDetailedFolderStructure,
+  getAllObjects
+};
