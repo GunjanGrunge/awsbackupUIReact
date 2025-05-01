@@ -1,0 +1,30 @@
+.upload-animation-container {
+  position: fixed;
+  bottom: 20px;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.truck-animation {
+  position: absolute;
+  height: 80px;
+  animation: driveAcross 3s linear forwards;
+}
+
+.bike-animation {
+  position: absolute;
+  height: 60px;
+  animation: driveAcross 2s linear forwards;
+}
+
+@keyframes driveAcross {
+  from {
+    transform: translateX(100vw);
+  }
+  to {
+    transform: translateX(-150px);
+  }
+}

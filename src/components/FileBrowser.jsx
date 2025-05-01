@@ -34,6 +34,14 @@ const FileBrowser = ({
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
 
+  // Convert lastModified date to string if it's a Date object
+  const formatItems = items.map(item => ({
+    ...item,
+    lastModified: item.lastModified instanceof Date ? 
+      item.lastModified.toLocaleString() : 
+      item.lastModified
+  }));
+
   const handleRestore = async (item) => {
     setSelectedItem(item);
     setShowRestoreModal(true);
@@ -151,12 +159,12 @@ const FileBrowser = ({
           <tr>
             <th>Name</th>
             <th>Size</th>
-            <th>Storage Class</th>
+            <th>Last Modified</th>
             <th style={{width: '220px'}}>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => (
+          {formatItems.map((item) => (
             <tr key={item.key} className={item.storageClass === 'GLACIER' ? 'glacier-row' : ''}>
               <td>
                 <div className="item-name">
@@ -181,7 +189,7 @@ const FileBrowser = ({
                 </div>
               </td>
               <td>{item.type === 'folder' ? '--' : formatFileSize(item.size)}</td>
-              <td>{item.type === 'folder' ? '--' : renderGlacierStatus(item)}</td>
+              <td>{item.lastModified || '--'}</td>
               <td>
                 <div className="action-buttons">
                   {item.type === 'folder' ? (
@@ -315,13 +323,16 @@ FileBrowser.propTypes = {
       name: PropTypes.string.isRequired,
       type: PropTypes.oneOf(['file', 'folder']).isRequired,
       size: PropTypes.number,
-      lastModified: PropTypes.string,
+      lastModified: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.instanceOf(Date)
+      ]),
       storageClass: PropTypes.string,
       hasArchivedFiles: PropTypes.bool,
       restoring: PropTypes.bool,
       restored: PropTypes.bool
     })
-  ),
+  ).isRequired,
   isLoading: PropTypes.bool,
   onNavigate: PropTypes.func.isRequired,
   onDownload: PropTypes.func.isRequired,

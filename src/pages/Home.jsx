@@ -31,7 +31,7 @@ const Home = () => {  // Remove unused initialTab prop
   // Function to check if file is an archive
   const isArchiveFile = useCallback((filename) => {
     return archiveTypes.some(ext => filename.toLowerCase().endsWith(ext));
-  }, []);
+  }, [archiveTypes]);
 
   // Get folder name based on user and date
   const getFolderName = useCallback(() => {
@@ -207,10 +207,14 @@ const Home = () => {  // Remove unused initialTab prop
     }
   });
 
+  // Configure file dropzone
   const { getRootProps: getFileRootProps, getInputProps: getFileInputProps, isDragActive: isFileDragActive } = useDropzone({
     onDrop: onFileDrop,
     multiple: true,
-    noDrag: false
+    webkitdirectory: false,
+    directory: false,
+    noClick: false,
+    accept: undefined // Allow all file types
   });
 
   // Cleanup function for previews
@@ -295,24 +299,17 @@ const Home = () => {  // Remove unused initialTab prop
           let uploadPath;
           
           if (uploadSource === 'folder') {
-            // For folder uploads, maintain the folder structure
             uploadPath = file.webkitRelativePath;
           } else {
-            // For single file uploads
-            if (isArchiveFile(file.name)) {
-              uploadPath = file.name;
-            } else {
-              uploadPath = `${uploadFolderName}/${file.name}`;
-            }
+            uploadPath = isArchiveFile(file.name) ? file.name : `${uploadFolderName}/${file.name}`;
           }
 
-          // Clean up the path (remove any ./ prefix and normalize slashes)
           uploadPath = uploadPath
             .replace(/^\.\//, '')
             .replace(/^\/+|\/+$/g, '');
 
-          await uploadToS3(file, uploadPath, (progress) => {
-            // Update progress state if needed
+          await uploadToS3(file, uploadPath, () => {
+            // Progress callback left empty intentionally
           });
           
           uploadedCount++;
@@ -328,8 +325,8 @@ const Home = () => {  // Remove unused initialTab prop
         showToast(`Upload completed with ${failedFiles.length} failures`, 'warning');
       } else {
         showToast('All files uploaded successfully!', 'success');
-        setFiles([]); // Clear files if all uploads were successful
-        setUploadFolderName(''); // Reset folder name
+        setFiles([]);
+        setUploadFolderName('');
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -391,7 +388,10 @@ const Home = () => {  // Remove unused initialTab prop
                   <Button 
                     variant="primary" 
                     className="select-button"
-                    onClick={() => document.querySelector('input[type="file"]').click()}
+                    onClick={e => {
+                      e.stopPropagation();
+                      document.querySelector('.upload-zone input[type="file"]').click();
+                    }}
                   >
                     Browse Files
                   </Button>
@@ -492,12 +492,14 @@ const Home = () => {  // Remove unused initialTab prop
               Securely manage your files and folders with our AWS S3-powered file management system. 
               Upload, organize, and access your data from anywhere with enterprise-grade security.
             </p>
-            <ul className="feature-list">
-              <li><FaCheckCircle className="feature-icon" /> Secure file storage</li>
-              <li><FaCheckCircle className="feature-icon" /> Easy folder organization</li>
-              <li><FaCheckCircle className="feature-icon" /> Quick file access</li>
-              <li><FaCheckCircle className="feature-icon" /> Cost-effective solution</li>
-            </ul>
+            <div className="feature-list">
+              <ul>
+                <li><FaCheckCircle className="feature-icon" /> Secure file storage</li>
+                <li><FaCheckCircle className="feature-icon" /> Easy folder organization</li>
+                <li><FaCheckCircle className="feature-icon" /> Quick file access</li>
+                <li><FaCheckCircle className="feature-icon" /> Cost-effective solution</li>
+              </ul>
+            </div>
           </div>
           <div className="col-lg-6">
             <div className="welcome-image">

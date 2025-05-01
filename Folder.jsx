@@ -15,6 +15,7 @@ import { useTransfer } from './contexts/TransferContext';
 import FileBrowser from './components/FileBrowser';
 import { FaCheckCircle } from 'react-icons/fa';
 import welcomeImage from './src/images/4569774.jpg';
+import UploadAnimation from './src/components/UploadAnimation';
 
 const Folder = () => {
   const [currentPath, setCurrentPath] = useState('');
@@ -26,6 +27,8 @@ const Folder = () => {
   const [itemToRestore, setItemToRestore] = useState(null);
   const [newName, setNewName] = useState('');
   const [glacierStats, setGlacierStats] = useState(null);
+  const [showAnimation, setShowAnimation] = useState(false);
+  const [animationType, setAnimationType] = useState('file');
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -83,6 +86,7 @@ const Folder = () => {
 
       if (item.type === 'folder') {
         await downloadFolder(item.key, transferContext);
+        setAnimationType('folder');
       } else {
         const url = await getS3DownloadUrl(item.key, item.size, transferContext);
         if (url) {
@@ -92,8 +96,10 @@ const Folder = () => {
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
+          setAnimationType('file');
         }
       }
+      setShowAnimation(true);
       showToast(`Download started for ${item.name}`, 'success');
     } catch (error) {
       if (error.message === 'Download cancelled by user') {
@@ -179,6 +185,8 @@ const Folder = () => {
         onRestore={handleRestore}
         glacierStats={glacierStats}
       />
+      
+      <UploadAnimation show={showAnimation} type={animationType} />
       
       {/* Rename Modal */}
       <Modal show={showRenameModal} onHide={() => setShowRenameModal(false)}>

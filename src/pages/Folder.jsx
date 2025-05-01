@@ -7,11 +7,13 @@ import {
   getS3DownloadUrl,
   getGlacierStats,
   restoreFromGlacier,
-  renameS3Object
+  renameS3Object,
+  uploadFile
 } from '../services/s3Service';
 import { useToast } from '../contexts/ToastContext';
 import { useTransfer } from '../contexts/TransferContext';
 import FileBrowser from '../components/FileBrowser';
+import UploadAnimation from '../components/UploadAnimation';
 import { FaCheckCircle } from 'react-icons/fa';
 import welcomeImage from '../images/4569774.jpg';
 
@@ -23,6 +25,8 @@ const Folder = () => {
   const [itemToRename, setItemToRename] = useState(null);
   const [newName, setNewName] = useState('');
   const [glacierStats, setGlacierStats] = useState(null);
+  const [showAnimation, setShowAnimation] = useState(false);
+  const [uploadType, setUploadType] = useState('file');
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -119,6 +123,32 @@ const Folder = () => {
     }
   };
 
+  // Handle upload
+  const handleUpload = async (files) => {
+    try {
+      const isFolder = files.length > 1 || files[0].webkitRelativePath;
+      setUploadType(isFolder ? 'folder' : 'file');
+      
+      const uploadPromises = files.map(file => {
+        const key = currentPath + file.webkitRelativePath || file.name;
+        return uploadFile(key, file, transferContext);
+      });
+      
+      await Promise.all(uploadPromises);
+      setShowAnimation(true); // Show animation after successful upload
+      
+      // Hide animation after duration
+      setTimeout(() => {
+        setShowAnimation(false);
+      }, uploadType === 'folder' ? 3000 : 2000);
+      
+      loadFolderContents(currentPath);
+      showToast('Upload completed successfully!', 'success');
+    } catch (error) {
+      showToast(`Upload failed: ${error.message}`, 'error');
+    }
+  };
+
   return (
     <Container className="folder-container">
       <FileBrowser 
@@ -131,6 +161,8 @@ const Folder = () => {
         onRestore={handleRestore}
         glacierStats={glacierStats}
       />
+
+      <UploadAnimation show={showAnimation} type={uploadType} />
       
       <div className="welcome-section mt-4">
         <div className="row align-items-center">
