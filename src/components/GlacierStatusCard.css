@@ -1,0 +1,55 @@
+.glacier-status-card {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.glacier-status-card .card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.glacier-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat-item {
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-item label {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.stat-item .stat-value {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #212529;
+}
+
+.pending-table {
+  margin-top: 1rem;
+}
+
+.pending-table th {
+  font-weight: 600;
+  color: #495057;
+}
+
+.pending-table td {
+  vertical-align: middle;
+}
+
+.more-files-note {
+  margin-top: 1rem;
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+}

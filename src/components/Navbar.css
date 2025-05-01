@@ -1,0 +1,376 @@
+/* ...existing code... */
+
+.navbar-custom {
+  background: white !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  height: 64px;
+}
+
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+.brand-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1f36;
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .brand-text {
+    display: inline;
+  }
+}
+
+.nav-links-center {
+  gap: 1rem;
+}
+
+.nav-link-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  color: #4f566b !important;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  font-weight: 500;
+  position: relative;
+}
+
+.nav-link-custom:hover {
+  background: #f7fafc;
+  color: #1a1f36 !important;
+}
+
+.nav-link-custom.active {
+  background: #edf2ff;
+  color: #3b82f6 !important;
+  font-weight: 500;
+}
+
+.nav-link-custom:hover .nav-icon {
+  transform: translateY(-1px);
+}
+
+.nav-link-custom.active .nav-icon {
+  color: #4f46e5;
+}
+
+.nav-icon {
+  font-size: 1.2rem;
+}
+
+.user-nav {
+  display: flex;
+  align-items: center;
+  margin-left: 1rem;
+}
+
+/* Custom styles for the dropdown toggle button */
+.user-dropdown-toggle {
+  padding: 8px 16px;
+  background-color: #f8f9fa;
+  border-radius: 30px;
+  border: 1px solid #eaeaea;
+  transition: all 0.2s ease;
+}
+
+.user-dropdown-toggle:hover {
+  background-color: #f0f0f0;
+  border-color: #e0e0e0;
+}
+
+.user-icon {
+  font-size: 1.1rem;
+  margin-right: 8px;
+  color: #5c6ac4;
+}
+
+.username {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.custom-dropdown .dropdown-menu {
+  padding: 8px;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  min-width: 200px;
+  margin-top: 5px;
+  background: white;
+  animation: dropdownFade 0.2s ease;
+}
+
+.custom-dropdown .dropdown-item {
+  padding: 10px 15px;
+  margin: 2px 0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4a4a4a;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.custom-dropdown .dropdown-item:hover {
+  background-color: #f8f9fa;
+  transform: translateX(3px);
+}
+
+.custom-dropdown .dropdown-icon {
+  margin-right: 12px;
+  font-size: 1rem;
+  color: #6c757d;
+}
+
+.custom-dropdown .dropdown-divider {
+  margin: 8px 0;
+  border-top: 1px solid #f0f0f0;
+}
+
+.custom-dropdown .logout-item {
+  color: #dc3545;
+}
+
+.custom-dropdown .logout-item:hover {
+  background-color: #fff5f5;
+  color: #dc3545;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 991px) {
+  .nav-links-center {
+    margin: 1rem 0;
+  }
+
+  .user-nav {
+    margin: 1rem 0;
+  }
+
+  .user-dropdown-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .navbar-custom {
+    height: auto;
+    padding: 0.5rem 1rem;
+  }
+
+  .navbar-collapse {
+    background: white;
+    position: absolute;
+    top: 64px;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+  }
+
+  .nav-links-center {
+    margin: 0;
+    padding: 1rem 0;
+  }
+
+  .nav-link-custom {
+    padding: 0.75rem 1rem !important;
+    margin: 0.25rem 0;
+  }
+
+  .user-dropdown {
+    width: 100%;
+    margin: 1rem 0 0 0;
+  }
+
+  .user-dropdown button {
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem;
+  }
+
+  .navbar-toggler {
+    border: none;
+    padding: 0.5rem;
+    margin-left: 1rem;
+  }
+
+  .navbar-toggler:focus {
+    box-shadow: none;
+    outline: none;
+  }
+}
+
+.toast-container {
+  z-index: 1100;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+}
+
+.toast {
+  min-width: 300px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+}
+
+.bg-success {
+  background-color: #28a745 !important;
+}
+
+.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+.toast .toast-body {
+  padding: 12px 15px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.profile-toggle {
+  padding: 6px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  background: transparent !important;
+}
+
+.profile-toggle:hover, .profile-toggle:focus {
+  background: #f7fafc !important;
+  border-color: #cbd5e0;
+}
+
+.user-dropdown {
+  margin-left: 1rem;
+}
+
+.user-dropdown button {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 6px 12px;
+  color: #1a1f36;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.user-dropdown button:hover,
+.user-dropdown button:focus,
+.user-dropdown button:active {
+  background: #f7fafc !important;
+  border-color: #cbd5e0 !important;
+  color: #1a1f36 !important;
+  box-shadow: none !important;
+}
+
+.user-dropdown button::after {
+  margin-left: 8px;
+  color: #64748b;
+}
+
+.user-dropdown .dropdown-menu {
+  padding: 8px;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-top: 8px;
+}
+
+.user-dropdown .dropdown-item {
+  padding: 8px 16px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #1a1f36;
+  font-weight: 500;
+}
+
+.user-dropdown .dropdown-item:hover {
+  background: #f7fafc;
+}
+
+.user-dropdown .dropdown-item.logout-item {
+  color: #dc2626;
+}
+
+.user-dropdown .dropdown-item.logout-item:hover {
+  background: #fef2f2;
+}
+
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3e%3cpath stroke='rgba(59, 130, 246, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+}
+
+.navbar-toggler {
+  transition: all 0.3s ease;
+}
+
+.navbar-toggler:hover {
+  transform: scale(1.05);
+}
+
+/* ...existing styles... */
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+}
+
+/* Remove the old AI analysis link styles */
+.ai-analysis-link,
+.ai-analysis-link:hover,
+.ai-analysis-link::after,
+.ai-analysis-link:hover::after {
+  display: none;
+}
+
+/* ...existing styles... */
+
+.ai-nav-icon {
+  width: 44px;
+  height: 34px;
+  object-fit: contain;
+  margin: 0;
+}
+
+/* ...rest of existing styles... */

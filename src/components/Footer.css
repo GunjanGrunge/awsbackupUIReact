@@ -1,0 +1,70 @@
+.app-footer {
+  padding: 0.2rem;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
+  background: rgba(44, 62, 80, 0.95) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    opacity: 0.75 !important;
+  z-index: 1000;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1rem;
+}
+
+.footer-text {
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.aws-logo {
+  height: 30px;
+  width: auto;
+  object-fit: contain;
+}
+
+.firebase-logo {
+  height: 35px;
+  width: auto;
+  object-fit: contain;
+}
+
+.openai-logo {
+  height: 25px;
+  width: auto;
+  object-fit: contain;
+}
+
+@media (max-width: 768px) {
+  .app-footer {
+    padding: 0.75rem;
+  }
+  
+  .aws-logo {
+    height: 24px;
+  }
+}
+
+
+@media (max-width: 768px) {
+  .app-footer {
+    padding: 0.75rem;
+  }
+  
+  .firebase-logo {
+    height: 26px;
+  }
+}
+
+

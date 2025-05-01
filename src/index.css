@@ -1,0 +1,101 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  /* Update font family to use Oxanium as primary font */
+  font-family: 'Oxanium', sans-serif;
+  font-weight: 300;
+}
+
+body {
+  font-weight: 300;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 500;
+}
+
+button, .btn {
+  font-weight: 400;
+}
+
+/* Toast Styles */
+.Toastify__toast {
+  font-family: 'Oxanium', sans-serif;
+  font-weight: 400;
+  border-radius: 4px;
+}
+
+.Toastify__toast--success {
+  background-color: #10B981 !important;
+}
+
+.Toastify__toast--error {
+  background-color: #EF4444 !important;
+}
+
+.Toastify__toast--warning {
+  background-color: #F59E0B !important;
+}
+
+.Toastify__toast--info {
+  background-color: #3B82F6 !important;
+}
+
+.Toastify__toast-body {
+  color: white !important;
+  font-weight: 400;
+}
+
+/* Cursor styles */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Table styles */
+.table th {
+  font-weight: 600;
+  border-top: none;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+/* Breadcrumb styles */
+.breadcrumb-item {
+  cursor: pointer;
+}
+
+.breadcrumb-item:hover {
+  text-decoration: underline;
+}
+
+/* Card styles */
+.card {
+  border-radius: 0.5rem;
+}
+
+.card-header {
+  border-top-left-radius: 0.5rem !important;
+  border-top-right-radius: 0.5rem !important;
+}
+
+/* Button styles */
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+/* Icon styles */
+.icon-sm {
+  font-size: 0.875rem;
+}
+
+/* Empty state styles */
+.text-muted {
+  color: #6c757d !important;
+}

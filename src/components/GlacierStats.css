@@ -1,0 +1,98 @@
+.glacier-stats-card {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: none;
+  border-radius: 8px;
+}
+
+.stats-section {
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  height: 100%;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.stat-item:last-child {
+  border-bottom: none;
+}
+
+.stat-item span {
+  color: #6c757d;
+}
+
+.stat-item strong {
+  color: #212529;
+}
+
+.progress-section {
+  margin-top: 15px;
+}
+
+.progress-section label {
+  display: block;
+  margin-bottom: 5px;
+  color: #6c757d;
+}
+
+.progress {
+  height: 10px;
+  border-radius: 5px;
+}
+
+.pending-transitions {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+  margin-top: 20px;
+}
+
+.transitions-list {
+  margin-top: 10px;
+}
+
+.transition-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid #e9ecef;
+  font-size: 0.9em;
+}
+
+.transition-item:last-child {
+  border-bottom: none;
+}
+
+.file-name {
+  flex: 2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.days-left {
+  flex: 1;
+  text-align: center;
+  color: #dc3545;
+}
+
+.file-size {
+  flex: 1;
+  text-align: right;
+  color: #6c757d;
+}
+
+.more-transitions {
+  text-align: center;
+  color: #6c757d;
+  margin-top: 10px;
+  font-style: italic;
+}

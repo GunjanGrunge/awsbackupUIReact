@@ -1,0 +1,306 @@
+/* Update font styles to use Oxanium */
+
+.login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  padding: 20px;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin: auto;
+}
+
+.form-control:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn-primary {
+  transition: all 0.3s ease;
+  font-weight: 400;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+}
+
+/* Navbar styling with Oxanium font */
+.navbar-custom {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px);
+  padding: 0.5rem 1rem;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: white !important;
+}
+
+.navbar-custom .navbar-nav .nav-link {
+  padding: 0.5rem 1rem;
+  color: #333;
+  font-weight: 400;
+}
+
+.navbar-custom .navbar-nav .nav-link:hover {
+  color: #007bff;
+}
+
+/* Add padding to body to prevent content from hiding under navbar */
+body {
+  padding-top: 80px; /* Adjust this value to match navbar height */
+  background-color: #f8f9fa; /* Add a light background color */
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.brand-text {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #232f3e;
+  letter-spacing: -0.5px;
+}
+
+.navbar-custom .navbar-brand {
+  padding: 0.25rem 0;
+  transition: opacity 0.2s ease;
+}
+
+.navbar-custom .navbar-brand:hover {
+  opacity: 0.85;
+}
+
+/* Brand Styles */
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.3s ease;
+}
+
+.brand-wrapper:hover {
+  transform: translateY(-1px);
+}
+
+.brand-logo {
+  transition: transform 0.3s ease;
+}
+
+.brand-wrapper:hover .brand-logo {
+  transform: scale(1.05);
+}
+
+/* Navigation Links */
+.nav-links-center {
+  gap: 10px;
+}
+
+.nav-link-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px !important;
+  border-radius: 6px;
+  transition: all 0.3s ease !important;
+  position: relative;
+  font-weight: 400;
+}
+
+.nav-link-custom:hover {
+  background: rgba(0, 123, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.nav-link-custom.active {
+  background: rgba(0, 123, 255, 0.15);
+  color: #007bff !important;
+  font-weight: 500;
+}
+
+.nav-icon {
+  font-size: 1.1rem;
+  transition: transform 0.3s ease;
+}
+
+.nav-link-custom:hover .nav-icon {
+  transform: scale(1.1);
+}
+
+/* User Dropdown Styles */
+.user-dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgba(0, 123, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.user-dropdown-toggle:hover {
+  background: rgba(0, 123, 255, 0.2);
+}
+
+.user-icon {
+  font-size: 1.1rem;
+  color: #007bff;
+}
+
+.username {
+  font-weight: 400;
+  color: #2c3e50;
+}
+
+.custom-dropdown .dropdown-menu {
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin-top: 10px;
+  animation: dropdownFade 0.3s ease;
+}
+
+.dropdown-icon {
+  margin-right: 8px;
+  color: #6c757d;
+}
+
+.logout-item {
+  color: #dc3545 !important;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+  .nav-links-center {
+    margin: 1rem 0;
+  }
+  
+  .user-dropdown-toggle {
+    margin-top: 1rem;
+  }
+
+  body {
+    padding-top: 64px;
+  }
+
+  .page-container {
+    margin-top: 2rem;
+  }
+
+  .container {
+    padding: 1rem;
+  }
+}
+
+.page-container {
+  padding-bottom: 80px; /* Add space for footer */
+}
+
+@media screen and (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .button {
+    width: 100%;
+    margin: 5px 0;
+  }
+
+  .content {
+    margin-top: 10px;
+  }
+}
+
+.mobile-menu-button {
+  display: none;
+}
+
+@media screen and (max-width: 768px) {
+  .mobile-menu-button {
+    display: block;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .nav-links.active {
+    display: flex;
+  }
+}
+
+.app-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  padding-top: 80px; /* Height of navbar */
+  padding-bottom: 60px; /* Height of footer */
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+/* Add specific header styles for different sections */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Oxanium', sans-serif;
+}
+
+h1 {
+  font-weight: 500;
+}
+
+h2, h3 {
+  font-weight: 400;
+}
+
+h4, h5, h6 {
+  font-weight: 400;
+}
+
+/* Card titles */
+.card-title {
+  font-weight: 500;
+}
