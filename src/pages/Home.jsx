@@ -394,12 +394,14 @@ const Home = () => {  // Remove unused initialTab prop
                   <Button 
                     variant="primary" 
                     className="select-button"
-                    onClick={() => {
-                      const fileInput = document.createElement('input');
-                      fileInput.type = 'file';
-                      fileInput.multiple = true;
-                      fileInput.onchange = (e) => onFileDrop(Array.from(e.target.files));
-                      fileInput.click();
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.multiple = true;
+                      input.onchange = (e) => onFileDrop(Array.from(e.target.files));
+                      input.click();
                     }}
                   >
                     Browse Files
