@@ -211,10 +211,16 @@ const Home = () => {  // Remove unused initialTab prop
   const { getRootProps: getFileRootProps, getInputProps: getFileInputProps, isDragActive: isFileDragActive } = useDropzone({
     onDrop: onFileDrop,
     multiple: true,
-    webkitdirectory: false,
-    directory: false,
     noClick: false,
-    accept: undefined // Allow all file types
+    webkitdirectory: false,
+    noDragEventsBubbling: true,
+    accept: {
+      'image/*': [],
+      'audio/*': [],
+      'video/*': [],
+      'application/*': [],
+      'text/*': []
+    }
   });
 
   // Cleanup function for previews
@@ -388,9 +394,12 @@ const Home = () => {  // Remove unused initialTab prop
                   <Button 
                     variant="primary" 
                     className="select-button"
-                    onClick={e => {
-                      e.stopPropagation();
-                      document.querySelector('.upload-zone input[type="file"]').click();
+                    onClick={() => {
+                      const fileInput = document.createElement('input');
+                      fileInput.type = 'file';
+                      fileInput.multiple = true;
+                      fileInput.onchange = (e) => onFileDrop(Array.from(e.target.files));
+                      fileInput.click();
                     }}
                   >
                     Browse Files
