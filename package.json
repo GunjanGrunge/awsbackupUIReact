@@ -44,7 +44,7 @@
     "@eslint/js": "^8.57.0",
     "@types/react": "^18.2.57",
     "@types/react-dom": "^18.2.19",
-    "@vitejs/plugin-react": "^4.2.1",
+    "@vitejs/plugin-react": "^4.5.2",
     "buffer": "^6.0.3",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.33.2",
@@ -57,7 +57,7 @@
     "rimraf": "^5.0.5",
     "stream-browserify": "^3.0.0",
     "util": "^0.12.5",
-    "vite": "^6.3.4"
+    "vite": "^6.3.5"
   },
   "resolutions": {
     "undici": "6.6.2",

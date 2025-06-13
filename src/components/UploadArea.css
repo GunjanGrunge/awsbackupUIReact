@@ -1,0 +1,64 @@
+.upload-area {
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  background-color: #f8f9fa;
+  min-height: 250px;
+}
+
+.upload-area.dragging {
+  border-color: #0d6efd;
+  background-color: #e9effd;
+  transform: scale(1.01);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.upload-icon {
+  font-size: 3rem;
+  color: #6c757d;
+}
+
+.upload-area.dragging .upload-icon {
+  color: #0d6efd;
+}
+
+.upload-area h5 {
+  font-weight: 600;
+}
+
+.glacier-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.standard-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  background-color: #6c757d;
+}
+
+.restore-status {
+  font-style: italic;
+}
+
+.advanced-info {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.advanced-info h6 {
+  font-weight: 600;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.advanced-info ul {
+  padding-left: 1.5rem;
+}
+
+.advanced-info li {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}

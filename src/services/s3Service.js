@@ -656,20 +656,31 @@ const getDetailedFolderStructure = async (prefix = '') => {
       }
     }
 
-    return structure;
-  } catch (error) {
+    return structure;  } catch (error) {
     console.error('Error getting detailed folder structure:', error);
     return {};
   }
 };
 
+// Import enhanced services to replace existing ones
+import { 
+  uploadToS3Enhanced, 
+  getS3DownloadUrlEnhanced, 
+  downloadFolderEnhanced 
+} from './enhancedS3Service';
+
+import {
+  checkGlacierStatus as enhancedCheckGlacierStatus,
+  restoreFromGlacier as enhancedRestoreFromGlacier,
+  restoreFromGlacierBulk as enhancedRestoreFromGlacierBulk,
+  GLACIER_RETRIEVAL_TIERS
+} from './glacierService';
+
+// Export all services - using enhanced versions where available
 export {
   s3Client,
-  uploadToS3,
   listS3Objects,
   deleteS3Object,
-  getS3DownloadUrl,
-  downloadFolder,
   getFolderSize,
   getHistoryLog,
   logActivity,
@@ -680,7 +691,12 @@ export {
   getAllObjects,
   renameS3Object,
   getGlacierStats,
-  checkGlacierStatus,
-  restoreFromGlacier,
-  restoreFromGlacierBulk
+  // Enhanced functions
+  uploadToS3Enhanced as uploadToS3,
+  getS3DownloadUrlEnhanced as getS3DownloadUrl,
+  downloadFolderEnhanced as downloadFolder,
+  enhancedCheckGlacierStatus as checkGlacierStatus,
+  enhancedRestoreFromGlacier as restoreFromGlacier,
+  enhancedRestoreFromGlacierBulk as restoreFromGlacierBulk,
+  GLACIER_RETRIEVAL_TIERS
 };
