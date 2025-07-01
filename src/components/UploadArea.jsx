@@ -4,7 +4,7 @@ import { FaUpload, FaFolderOpen, FaDownload } from 'react-icons/fa';
 import { uploadToS3 } from '../services/s3Service';
 import { useTransfer } from '../contexts/TransferContext';
 import { useToast } from '../contexts/ToastContext';
-import { isLargeFile } from '../utils/fileUtils';
+import { isLargeFile, formatFileSize } from '../utils/fileUtils';
 import LargeFileTransferModal from './LargeFileTransferModal';
 import './UploadArea.css';
 
@@ -83,22 +83,51 @@ const UploadArea = ({ currentPath, onUploadComplete }) => {
   
   // Upload the files
   const uploadFiles = async (files) => {
+    if (!files || files.length === 0) return;
+    
     setIsUploading(true);
     
     try {
-      // Process each file
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const filePath = currentPath ? `${currentPath}${file.name}` : file.name;
-          await uploadToS3(
-          file, 
-          filePath, 
-          () => {}, // Progress is handled by the TransferContext
-          transferContext
-        );
+      // Convert FileList to Array for easier handling
+      const fileArray = Array.from(files);
+      const totalSize = fileArray.reduce((total, file) => total + file.size, 0);
+      
+      // Show warning for extremely large uploads
+      if (totalSize > 10 * 1024 * 1024 * 1024) { // 10GB
+        showToast(`Warning: Uploading ${formatFileSize(totalSize)} of data. This may take a long time.`, 'warning');
       }
       
-      showToast(`${files.length} file(s) uploaded successfully`, 'success');
+      // Process each file
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i];
+        const filePath = currentPath ? `${currentPath}${file.name}` : file.name;
+        
+        try {
+          // Get directory path from webkitRelativePath if available (for folder uploads)
+          let fullPath = filePath;
+          if (file.webkitRelativePath) {
+            fullPath = currentPath ? `${currentPath}${file.webkitRelativePath}` : file.webkitRelativePath;
+          }
+          
+          // For very large files, show specific toast
+          if (file.size > 1024 * 1024 * 1024) { // 1GB
+            showToast(`Uploading large file: ${file.name} (${formatFileSize(file.size)})`, 'info');
+          }
+          
+          await uploadToS3(
+            file, 
+            fullPath, 
+            () => {}, // Progress is handled by the TransferContext
+            transferContext
+          );
+        } catch (error) {
+          console.error(`Error uploading ${file.name}:`, error);
+          showToast(`Failed to upload ${file.name}: ${error.message}`, 'error');
+          // Continue with other files
+        }
+      }
+      
+      showToast(`${fileArray.length} file(s) uploaded successfully`, 'success');
       onUploadComplete && onUploadComplete();
     } catch (error) {
       showToast(`Upload failed: ${error.message}`, 'error');

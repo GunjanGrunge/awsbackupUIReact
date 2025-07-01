@@ -60,13 +60,17 @@ const uploadToS3Enhanced = async (file, filePath, onProgress = () => {}, transfe
       transferId = transferContext.addTransfer({
         name: fileName,
         type: 'upload',
-        size: fileSize
+        size: fileSize,
+        key: cleanPath
       });
     }
 
     try {
+      console.log(`Starting upload for ${fileName}, size: ${fileSize} bytes`);
+      
       // For very large files (>1GB), use manual multipart upload for better control
       if (fileSize > LARGE_FILE_THRESHOLD) {
+        console.log(`Using manual multipart upload for large file: ${fileName}`);
         await uploadLargeFile(file, cleanPath, fileSize, (progress) => {
           onProgress(progress);
           if (transferContext && transferId) {
@@ -75,6 +79,7 @@ const uploadToS3Enhanced = async (file, filePath, onProgress = () => {}, transfe
         });
       } else {
         // For smaller files, use the AWS SDK's Upload utility
+        console.log(`Using standard upload for file: ${fileName}`);
         const upload = new Upload({
           client: s3Client,
           params: {
@@ -84,7 +89,7 @@ const uploadToS3Enhanced = async (file, filePath, onProgress = () => {}, transfe
             ContentType: file.type || 'application/octet-stream'
           },
           queueSize: 4,
-          partSize: 10 * 1024 * 1024, // 10MB parts
+          partSize: Math.min(10 * 1024 * 1024, Math.ceil(fileSize / 10)), // 10MB parts or smaller for better reliability
           leavePartsOnError: false
         });
 
@@ -101,6 +106,8 @@ const uploadToS3Enhanced = async (file, filePath, onProgress = () => {}, transfe
         await upload.done();
       }
 
+      console.log(`Upload completed successfully for ${fileName}`);
+      
       // Complete the transfer
       if (transferContext && transferId) {
         transferContext.completeTransfer(transferId);
@@ -116,6 +123,8 @@ const uploadToS3Enhanced = async (file, filePath, onProgress = () => {}, transfe
 
       return { success: true, key: cleanPath };
     } catch (error) {
+      console.error(`Upload failed for ${fileName}:`, error);
+      
       if (transferContext && transferId) {
         transferContext.errorTransfer(transferId, error);
       }
@@ -136,76 +145,115 @@ const uploadLargeFile = async (file, key, fileSize, onProgress) => {
     ContentType: file.type || 'application/octet-stream'
   });
   
-  const { UploadId } = await s3Client.send(createCommand);
-  
+  let uploadId;
   try {
-    // Calculate number of parts
-    const numParts = Math.ceil(fileSize / OPTIMAL_CHUNK_SIZE);
-    const uploadPromises = [];
-    const uploadedParts = [];
+    const { UploadId } = await s3Client.send(createCommand);
+    uploadId = UploadId;
     
-    // Upload each part
+    // Calculate number of parts based on optimal chunk size for file size
+    const chunkSize = Math.min(OPTIMAL_CHUNK_SIZE, 100 * 1024 * 1024); // Limit to 100MB chunks
+    const numParts = Math.ceil(fileSize / chunkSize);
+    let completedParts = [];
+    let uploadedBytes = 0;
+    
+    // Create abort controller for the upload
+    const controller = new AbortController();
+    
+    // Use sequential upload for very large files to prevent memory issues
     for (let i = 0; i < numParts; i++) {
-      const start = i * OPTIMAL_CHUNK_SIZE;
-      const end = Math.min(start + OPTIMAL_CHUNK_SIZE, fileSize);
+      const start = i * chunkSize;
+      const end = Math.min(start + chunkSize, fileSize);
       const partNumber = i + 1;
       
-      // Prepare part upload
+      // Slice the file into a chunk
       const chunk = file.slice(start, end);
-      const uploadPartCommand = new UploadPartCommand({
-        Bucket: import.meta.env.VITE_BUCKET_NAME,
-        Key: key,
-        PartNumber: partNumber,
-        UploadId,
-        Body: chunk
-      });
       
-      // Use a function to track progress for each part
-      const uploadPartWithProgress = async () => {
-        const response = await s3Client.send(uploadPartCommand);
-        
-        // Update progress
-        const uploaded = Math.min(end, fileSize);
-        onProgress({
-          loaded: uploaded,
-          total: fileSize,
-          percentage: Math.round((uploaded / fileSize) * 100)
-        });
-        
-        return {
-          ETag: response.ETag,
-          PartNumber: partNumber
-        };
-      };
+      // Set up part upload with retry logic
+      let retryCount = 0;
+      const MAX_RETRIES = 3;
       
-      uploadPromises.push(uploadPartWithProgress());
+      while (retryCount <= MAX_RETRIES) {
+        try {
+          // Prepare part upload command
+          const uploadPartCommand = new UploadPartCommand({
+            Bucket: import.meta.env.VITE_BUCKET_NAME,
+            Key: key,
+            PartNumber: partNumber,
+            UploadId: uploadId,
+            Body: chunk,
+            ContentLength: chunk.size
+          });
+          
+          // Upload the part
+          const response = await s3Client.send(uploadPartCommand, { 
+            abortSignal: controller.signal 
+          });
+          
+          // Add to completed parts
+          completedParts.push({
+            ETag: response.ETag,
+            PartNumber: partNumber
+          });
+          
+          // Update progress
+          uploadedBytes += chunk.size;
+          onProgress({
+            loaded: uploadedBytes,
+            total: fileSize,
+            percentage: Math.round((uploadedBytes / fileSize) * 100)
+          });
+          
+          // Successfully uploaded this part, break retry loop
+          break;
+          
+        } catch (error) {
+          // Check if request was aborted
+          if (error.name === 'AbortError') {
+            throw error;
+          }
+          
+          retryCount++;
+          console.warn(`Error uploading part ${partNumber}, attempt ${retryCount}:`, error);
+          
+          // If we've used all retries, rethrow the error
+          if (retryCount > MAX_RETRIES) {
+            throw error;
+          }
+          
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 500));
+        }
+      }
     }
-    
-    // Wait for all parts to upload
-    const results = await Promise.all(uploadPromises);
     
     // Complete the multipart upload
     const completeCommand = new CompleteMultipartUploadCommand({
       Bucket: import.meta.env.VITE_BUCKET_NAME,
       Key: key,
-      UploadId,
+      UploadId: uploadId,
       MultipartUpload: {
-        Parts: results.sort((a, b) => a.PartNumber - b.PartNumber)
+        Parts: completedParts.sort((a, b) => a.PartNumber - b.PartNumber)
       }
     });
     
     await s3Client.send(completeCommand);
     return { success: true };
+    
   } catch (error) {
-    // Abort the multipart upload if something goes wrong
-    try {
-      await s3Client.send(new AbortMultipartUploadCommand({
-        Bucket: import.meta.env.VITE_BUCKET_NAME,
-        Key: key,
-        UploadId
-      }));
-    } catch (abortError) {
-      console.error('Error aborting multipart upload:', abortError);
+    console.error('Error during large file upload:', error);
+    
+    // Abort the multipart upload if something goes wrong and we have an uploadId
+    if (uploadId) {
+      try {
+        await s3Client.send(new AbortMultipartUploadCommand({
+          Bucket: import.meta.env.VITE_BUCKET_NAME,
+          Key: key,
+          UploadId: uploadId
+        }));
+        console.log('Multipart upload aborted');
+      } catch (abortError) {
+        console.error('Error aborting multipart upload:', abortError);
+      }
     }
     throw error;
   }

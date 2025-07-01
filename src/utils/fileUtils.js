@@ -76,18 +76,18 @@ export const getOptimalChunkSize = (fileSizeInBytes) => {
     return 10 * 1024 * 1024; // 10MB
   }
   
-  // For files less than 10GB, use 50MB chunks
+  // For files 1GB to 5GB, use smaller 25MB chunks for more reliability
+  if (fileSizeInBytes < 5 * 1024 * 1024 * 1024) {
+    return 25 * 1024 * 1024; // 25MB
+  }
+  
+  // For files 5GB to 10GB, use 50MB chunks
   if (fileSizeInBytes < 10 * 1024 * 1024 * 1024) {
     return 50 * 1024 * 1024; // 50MB
   }
   
-  // For files less than 50GB, use 100MB chunks
-  if (fileSizeInBytes < 50 * 1024 * 1024 * 1024) {
-    return 100 * 1024 * 1024; // 100MB
-  }
-  
-  // For very large files, use 200MB chunks
-  return 200 * 1024 * 1024; // 200MB
+  // For larger files, limit to 100MB chunks to avoid memory issues
+  return 100 * 1024 * 1024; // 100MB
 };
 
 /**
