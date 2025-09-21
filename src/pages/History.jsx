@@ -10,7 +10,8 @@ import {
   FaCheckCircle 
 } from 'react-icons/fa';
 import { useToast } from '../contexts/ToastContext';
-import { getHistoryLog, formatFileSize, clearHistoryLog } from '../services/s3Service';
+import { getActivityHistory, clearActivityHistory } from '../services/supabaseHistoryService';
+import { formatFileSize } from '../services/s3Service';
 import historyImage from '../images/rb_5335.jpg';
 import './History.css';
 
@@ -34,13 +35,13 @@ const History = () => {
   const loadHistory = async () => {
     try {
       setLoading(true);
-      const historyData = await getHistoryLog();
+      const historyData = await getActivityHistory();
       console.log('Loaded history data:', historyData); // Debug log
       
       if (Array.isArray(historyData)) {
         // Sort by date in descending order
         const sortedData = historyData.sort((a, b) => 
-          new Date(b.date) - new Date(a.date)
+          new Date(b.created_at) - new Date(a.created_at)
         );
         setActivities(sortedData);
       } else {
@@ -58,7 +59,7 @@ const History = () => {
 
   const handleClearHistory = async () => {
     try {
-      await clearHistoryLog();
+      await clearActivityHistory();
       setActivities([]);
       showToast('History cleared successfully', 'success');
       setShowConfirmModal(false);
@@ -132,11 +133,11 @@ const History = () => {
                   <td>
                     <div className="file-name">
                       <FaCalendarAlt className="file-type-icon" />
-                      <span>{formatDate(activity.date)}</span>
+                      <span>{formatDate(activity.created_at)}</span>
                     </div>
                   </td>
                   <td className="text-center">
-                    <span>{formatTime(activity.date)}</span>
+                    <span>{formatTime(activity.created_at)}</span>
                   </td>
                   <td>
                     <div className="file-name">
@@ -147,16 +148,16 @@ const History = () => {
                   <td>
                     <div className="file-name">
                       <FaFileAlt className="file-type-icon" />
-                      <span>{activity.itemName}</span>  {/* Fixed: Removed extra parenthesis */}
+                      <span>{activity.item_name}</span>
                     </div>
                   </td>
                   <td className="text-center">
-                    <span>{formatFileSize(activity.size)}</span>
+                    <span>{formatFileSize(activity.file_size)}</span>
                   </td>
                   <td className="text-center">
                     <div className="file-name">
                       <FaLayerGroup className="file-type-icon" />
-                      <span>{activity.fileCount} files</span>
+                      <span>{activity.file_count} files</span>
                     </div>
                   </td>
                 </tr>

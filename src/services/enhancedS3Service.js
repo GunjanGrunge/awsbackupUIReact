@@ -18,6 +18,11 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Upload } from "@aws-sdk/lib-storage";
 import JSZip from 'jszip';
 
+// Import required functions from other services
+import { getAllObjects } from './s3Service';
+import { checkGlacierStatus } from './glacierService';
+import { logActivity } from './supabaseHistoryService.js';
+
 // Optimized chunk size for large files - 100MB per chunk
 const OPTIMAL_CHUNK_SIZE = 100 * 1024 * 1024; // 100MB
 // For files larger than this, we'll use multipart upload with manual control
@@ -44,6 +49,16 @@ const uploadToS3Enhanced = async (file, filePath, onProgress = () => {}, transfe
     if (!(file instanceof Blob || file instanceof File)) {
       throw new Error('Invalid file type - must be File or Blob');
     }
+
+    // Log file information for debugging
+    console.log('Upload attempt:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      isFile: file instanceof File,
+      isBlob: file instanceof Blob,
+      constructor: file.constructor.name
+    });
 
     // Clean up the file path
     const cleanPath = filePath
@@ -78,32 +93,121 @@ const uploadToS3Enhanced = async (file, filePath, onProgress = () => {}, transfe
           }
         });
       } else {
-        // For smaller files, use the AWS SDK's Upload utility
+        // For smaller files, decide between simple PUT and multipart upload
         console.log(`Using standard upload for file: ${fileName}`);
-        const upload = new Upload({
-          client: s3Client,
-          params: {
-            Bucket: import.meta.env.VITE_BUCKET_NAME,
-            Key: cleanPath,
-            Body: file,
-            ContentType: file.type || 'application/octet-stream'
-          },
-          queueSize: 4,
-          partSize: Math.min(10 * 1024 * 1024, Math.ceil(fileSize / 10)), // 10MB parts or smaller for better reliability
-          leavePartsOnError: false
-        });
+        
+        // Ensure we have a valid File or Blob object
+        if (!(file instanceof File || file instanceof Blob)) {
+          throw new Error('Invalid file object - must be File or Blob');
+        }
 
-        // Add progress handling
-        upload.on("httpUploadProgress", (progress) => {
-          const percentage = Math.round((progress.loaded / progress.total) * 100);
-          onProgress({ loaded: progress.loaded, total: progress.total, percentage });
+        // For very small files (< 25MB), use simple PUT to avoid multipart complexity
+        if (fileSize < 25 * 1024 * 1024) {
+          console.log(`Using simple PUT for small file: ${fileName}`);
           
-          if (transferContext && transferId) {
-            transferContext.updateTransferProgress(transferId, progress.loaded, progress.total);
+          try {
+            // Convert file to ArrayBuffer to avoid stream reader issues
+            console.log('Converting file to ArrayBuffer for reliable upload...');
+            
+            // Check available memory and file size
+            if (fileSize > 100 * 1024 * 1024 && typeof navigator !== 'undefined' && navigator.deviceMemory && navigator.deviceMemory < 4) {
+              throw new Error('File too large for available memory, using multipart upload instead');
+            }
+            
+            const arrayBuffer = await file.arrayBuffer();
+            console.log(`ArrayBuffer created, size: ${arrayBuffer.byteLength} bytes`);
+            
+            const putCommand = new PutObjectCommand({
+              Bucket: import.meta.env.VITE_BUCKET_NAME,
+              Key: cleanPath,
+              Body: new Uint8Array(arrayBuffer), // Use Uint8Array for maximum compatibility
+              ContentType: file.type || 'application/octet-stream',
+              ContentLength: arrayBuffer.byteLength
+            });
+            
+            console.log('Sending PUT command to S3...');
+            const result = await s3Client.send(putCommand);
+            console.log(`Simple PUT upload completed for ${fileName}`, result);
+            
+            // Simulate progress for consistency
+            onProgress({ loaded: fileSize, total: fileSize, percentage: 100 });
+            if (transferContext && transferId) {
+              transferContext.updateTransferProgress(transferId, fileSize, fileSize);
+            }
+            
+          } catch (putError) {
+            console.error(`Simple PUT upload failed for ${fileName}:`, putError);
+            
+            // If ArrayBuffer conversion fails, fall back to multipart upload
+            if (putError.message.includes('memory') || putError.name === 'QuotaExceededError' || putError.name === 'TypeError') {
+              console.log(`Falling back to multipart upload due to: ${putError.message}`);
+              // Force multipart upload for this file
+              return await uploadLargeFile(file, cleanPath, fileSize, onProgress);
+            }
+            throw putError;
           }
-        });
+        } else if (fileSize < 100 * 1024 * 1024) {
+          // For medium files (25MB - 100MB), try ArrayBuffer first, fallback to multipart
+          console.log(`Using multipart upload for medium file: ${fileName}`);
+          
+          try {
+            // Try ArrayBuffer approach first for files < 100MB
+            console.log('Converting file to ArrayBuffer for multipart upload...');
+            const arrayBuffer = await file.arrayBuffer();
+            console.log(`ArrayBuffer created for multipart, size: ${arrayBuffer.byteLength} bytes`);
+            
+            const upload = new Upload({
+              client: s3Client,
+              params: {
+                Bucket: import.meta.env.VITE_BUCKET_NAME,
+                Key: cleanPath,
+                Body: new Uint8Array(arrayBuffer), // Use Uint8Array for compatibility
+                ContentType: file.type || 'application/octet-stream',
+                ContentLength: arrayBuffer.byteLength
+              },
+              queueSize: 4,
+              partSize: 10 * 1024 * 1024, // Always use 10MB parts for multipart uploads
+              leavePartsOnError: false
+            });
 
-        await upload.done();
+          // Add progress handling with error protection
+          upload.on("httpUploadProgress", (progress) => {
+            try {
+              if (progress && progress.loaded !== undefined && progress.total !== undefined) {
+                const percentage = Math.round((progress.loaded / progress.total) * 100);
+                onProgress({ loaded: progress.loaded, total: progress.total, percentage });
+                
+                if (transferContext && transferId) {
+                  transferContext.updateTransferProgress(transferId, progress.loaded, progress.total);
+                }
+              }
+            } catch (error) {
+              console.error('Error in upload progress callback:', error);
+            }
+          });
+
+          await upload.done();
+          console.log(`Multipart upload completed for ${fileName}`);
+          } catch (multipartError) {
+            console.error(`Multipart upload failed for ${fileName}:`, multipartError);
+            
+            // If ArrayBuffer approach fails, fallback to large file upload
+            if (multipartError.message.includes('memory') || multipartError.name === 'QuotaExceededError') {
+              console.log(`Falling back to large file upload due to: ${multipartError.message}`);
+              return await uploadLargeFile(file, cleanPath, fileSize, onProgress);
+            }
+            throw multipartError;
+          }
+        } else {
+          // For very large files (>100MB), use manual multipart upload
+          console.log(`Using manual multipart upload for very large file: ${fileName}`);
+          await uploadLargeFile(file, cleanPath, fileSize, (progress) => {
+            onProgress(progress);
+            if (transferContext && transferId) {
+              transferContext.updateTransferProgress(transferId, progress.loaded, progress.total);
+            }
+          });
+        }
       }
 
       console.log(`Upload completed successfully for ${fileName}`);
@@ -113,12 +217,13 @@ const uploadToS3Enhanced = async (file, filePath, onProgress = () => {}, transfe
         transferContext.completeTransfer(transferId);
       }
 
-      // Log the upload activity
+      // Log the upload activity using Supabase
       await logActivity({
         action: 'Upload',
         itemName: fileName,
         size: fileSize,
-        fileCount: 1
+        fileCount: 1,
+        folderPath: cleanPath.substring(0, cleanPath.lastIndexOf('/')) || null
       });
 
       return { success: true, key: cleanPath };
@@ -174,14 +279,17 @@ const uploadLargeFile = async (file, key, fileSize, onProgress) => {
       
       while (retryCount <= MAX_RETRIES) {
         try {
+          // Convert chunk to ArrayBuffer for reliable upload
+          const chunkBuffer = await chunk.arrayBuffer();
+          
           // Prepare part upload command
           const uploadPartCommand = new UploadPartCommand({
             Bucket: import.meta.env.VITE_BUCKET_NAME,
             Key: key,
             PartNumber: partNumber,
             UploadId: uploadId,
-            Body: chunk,
-            ContentLength: chunk.size
+            Body: new Uint8Array(chunkBuffer),
+            ContentLength: chunkBuffer.byteLength
           });
           
           // Upload the part
@@ -276,17 +384,41 @@ const getS3DownloadUrlEnhanced = async (key, size, transferContext = null) => {
     // Get the file name from the key
     const fileName = key.split('/').pop();
 
-    // Log the download activity
+    // Log the download activity using Supabase
     await logActivity({
       action: 'Download',
       itemName: fileName,
       size: size,
-      fileCount: 1
+      fileCount: 1,
+      folderPath: key.substring(0, key.lastIndexOf('/')) || null
     });
 
-    // For large files, we'll use a different approach with progress tracking
+    // For large files, use direct signed URL instead of chunked download to avoid Vercel timeouts
     if (size > 50 * 1024 * 1024) { // 50MB
-      return downloadLargeFile(key, fileName, size, transferContext);
+      console.log(`Using direct signed URL for large file: ${fileName}`);
+      const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+      
+      if (transferContext) {
+        const transferId = transferContext.addTransfer({
+          name: fileName,
+          type: 'download',
+          size: size
+        });
+        
+        // Create download link and trigger download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // Mark as completed (progress tracking not available for direct downloads)
+        transferContext.completeTransfer(transferId);
+      }
+      
+      return url;
     } else {
       // For smaller files, use signed URL
       const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
@@ -344,65 +476,6 @@ const getS3DownloadUrlEnhanced = async (key, size, transferContext = null) => {
     }
   } catch (error) {
     console.error('Error getting download URL:', error);
-    throw error;
-  }
-};
-
-// Function to handle downloading very large files with better progress tracking
-const downloadLargeFile = async (key, fileName, totalSize, transferContext) => {
-  if (!transferContext) {
-    throw new Error('Transfer context is required for large file downloads');
-  }
-
-  const transferId = transferContext.addTransfer({
-    name: fileName,
-    type: 'download',
-    size: totalSize
-  });
-
-  try {
-    // Optimal chunk size for download
-    const chunkSize = 50 * 1024 * 1024; // 50MB
-    const numChunks = Math.ceil(totalSize / chunkSize);
-    const chunks = [];
-
-    // Fetch file in chunks
-    for (let i = 0; i < numChunks; i++) {
-      const start = i * chunkSize;
-      const end = Math.min(start + chunkSize, totalSize) - 1;
-      
-      const command = new GetObjectCommand({
-        Bucket: import.meta.env.VITE_BUCKET_NAME,
-        Key: key,
-        Range: `bytes=${start}-${end}`
-      });
-
-      const response = await s3Client.send(command);
-      const chunk = await response.Body.transformToByteArray();
-      chunks.push(chunk);
-      
-      // Update progress
-      const downloaded = end + 1;
-      transferContext.updateTransferProgress(transferId, downloaded, totalSize);
-    }
-
-    // Combine chunks and download
-    const blob = new Blob(chunks, { type: 'application/octet-stream' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    
-    // Clean up
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-    transferContext.completeTransfer(transferId);
-    
-    return { success: true };
-  } catch (error) {
-    transferContext.errorTransfer(transferId, error);
     throw error;
   }
 };

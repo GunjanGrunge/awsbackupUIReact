@@ -2,6 +2,7 @@ import { S3Client, ListObjectsV2Command, PutObjectCommand, HeadObjectCommand, Re
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import JSZip from 'jszip';
 import { Upload } from '@aws-sdk/lib-storage';
+import { logActivity as logSupabaseActivity, getActivityHistory as getSupabaseHistory, clearActivityHistory as clearSupabaseHistory } from './supabaseHistoryService.js';
 
 // Initialize S3 client
 const s3Client = new S3Client({
@@ -55,12 +56,13 @@ const uploadToS3 = async (file, filePath, onProgress = () => {}) => {
 
     const result = await upload.done();
     
-    // Log the upload activity
-    await logActivity({
+    // Log the upload activity using Supabase
+    await logSupabaseActivity({
       action: 'Upload',
       itemName: cleanPath.split('/').pop(),
       size: file.size,
-      fileCount: 1
+      fileCount: 1,
+      folderPath: cleanPath.substring(0, cleanPath.lastIndexOf('/')) || null
     });
 
     return result;
@@ -322,6 +324,14 @@ const deleteS3Object = async (key) => {
           }
         });
         await s3Client.send(deleteCommand);
+        
+        // Log folder deletion activity using Supabase
+        await logSupabaseActivity({
+          action: 'Delete',
+          itemName: key.split('/').slice(-2)[0] || 'folder',
+          fileCount: response.Contents.length,
+          folderPath: key.substring(0, key.lastIndexOf('/')) || null
+        });
       }
     } else {
       // For single files
@@ -330,6 +340,14 @@ const deleteS3Object = async (key) => {
         Key: key
       });
       await s3Client.send(command);
+      
+      // Log file deletion activity using Supabase
+      await logSupabaseActivity({
+        action: 'Delete',
+        itemName: key.split('/').pop(),
+        fileCount: 1,
+        folderPath: key.substring(0, key.lastIndexOf('/')) || null
+      });
     }
     return true;
   } catch (error) {
@@ -438,6 +456,16 @@ const renameS3Object = async (item, newName) => {
     });
     
     await s3Client.send(deleteCommand);
+    
+    // Log rename activity using Supabase
+    await logSupabaseActivity({
+      action: 'Rename',
+      itemName: `${oldKey.split('/').pop()} → ${newName}`,
+      size: item.size || 0,
+      fileCount: 1,
+      folderPath: oldKey.substring(0, oldKey.lastIndexOf('/')) || null
+    });
+    
     return true;
   } catch (error) {
     console.error('Error renaming S3 object:', error);
@@ -479,100 +507,33 @@ const getFolderSize = async (folderKey) => {
   }
 };
 
-// Function to get history log
+// Function to get history log (using Supabase)
 const getHistoryLog = async () => {
   try {
-    const command = new GetObjectCommand({
-      Bucket: import.meta.env.VITE_BUCKET_NAME,
-      Key: 'history-log.json'
-    });
-
-    try {
-      const response = await s3Client.send(command);
-      const bodyContents = await response.Body.transformToString();
-      return JSON.parse(bodyContents);
-    } catch (error) {
-      if (error.name === 'NoSuchKey') {
-        // If file doesn't exist, create it with empty array
-        await initializeHistoryLog();
-        return [];
-      }
-      throw error;
-    }
+    return await getSupabaseHistory();
   } catch (error) {
-    console.error('Error fetching history log:', error);
+    console.error('Error fetching history log from Supabase:', error);
     return [];
   }
 };
 
-// Function to initialize history log
-const initializeHistoryLog = async () => {
-  try {
-    const command = new PutObjectCommand({
-      Bucket: import.meta.env.VITE_BUCKET_NAME,
-      Key: 'history-log.json',
-      Body: JSON.stringify([]),
-      ContentType: 'application/json'
-    });
-    await s3Client.send(command);
-  } catch (error) {
-    console.error('Error initializing history log:', error);
-    throw error;
-  }
-};
-
-// Function to update history log
-const updateHistoryLog = async (newEntry) => {
-  try {
-    const currentHistory = await getHistoryLog();
-    const updatedHistory = [newEntry, ...currentHistory];
-    
-    await s3Client.send(new PutObjectCommand({
-      Bucket: import.meta.env.VITE_BUCKET_NAME,
-      Key: 'history-log.json',
-      Body: JSON.stringify(updatedHistory),
-      ContentType: 'application/json'
-    }));
-
-    return newEntry;
-  } catch (error) {
-    console.error('Error updating history log:', error);
-    throw error;
-  }
-};
-
-// Function to log activity
+// Function to log activity (using Supabase)
 const logActivity = async (activity) => {
   try {
-    const newEntry = {
-      date: new Date().toISOString(),
-      action: activity.action,
-      itemName: activity.itemName,
-      size: activity.size || 0,
-      fileCount: activity.fileCount || 1
-    };
-    
-    return await updateHistoryLog(newEntry);
+    return await logSupabaseActivity(activity);
   } catch (error) {
-    console.error('Error logging activity:', error);
-    throw error;
+    console.error('Error logging activity to Supabase:', error);
+    // Don't throw to avoid breaking upload/download flow
+    return null;
   }
 };
 
-// Function to clear history log
+// Function to clear history log (using Supabase)
 const clearHistoryLog = async () => {
   try {
-    const command = new PutObjectCommand({
-      Bucket: import.meta.env.VITE_BUCKET_NAME,
-      Key: 'history-log.json',
-      Body: JSON.stringify([]),
-      ContentType: 'application/json'
-    });
-
-    await s3Client.send(command);
-    return true;
+    return await clearSupabaseHistory();
   } catch (error) {
-    console.error('Error clearing history log:', error);
+    console.error('Error clearing history log in Supabase:', error);
     throw error;
   }
 };

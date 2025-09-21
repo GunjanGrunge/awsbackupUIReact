@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getHistoryLog, formatFileSize } from '../services/s3Service';
+import { getActivityHistory } from '../services/supabaseHistoryService.js';
+import { formatFileSize } from '../services/s3Service';
 
 const History = () => {
   const [history, setHistory] = useState([]);
@@ -9,16 +10,17 @@ const History = () => {
     const fetchHistory = async () => {
       try {
         setLoading(true);
-        const historyData = await getHistoryLog();
+        const historyData = await getActivityHistory();
         
         // Sort history by date in descending order (newest first)
+        // The Supabase service already returns data sorted, but let's be safe
         const sortedHistory = [...historyData].sort((a, b) => 
           new Date(b.date) - new Date(a.date)
         );
         
         setHistory(sortedHistory);
       } catch (error) {
-        console.error('Error fetching history:', error);
+        console.error('Error fetching history from Supabase:', error);
       } finally {
         setLoading(false);
       }

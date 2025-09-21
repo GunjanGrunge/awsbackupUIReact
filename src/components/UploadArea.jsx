@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Button, Form, ProgressBar, Card, Alert, Spinner } from 'react-bootstrap';
-import { FaUpload, FaFolderOpen, FaDownload } from 'react-icons/fa';
+import { FaUpload, FaFolderOpen, FaBoxes, FaCloudUploadAlt } from 'react-icons/fa';
 import { uploadToS3 } from '../services/s3Service';
 import { useTransfer } from '../contexts/TransferContext';
 import { useToast } from '../contexts/ToastContext';
@@ -159,30 +159,34 @@ const UploadArea = ({ currentPath, onUploadComplete }) => {
             </div>
           ) : (
             <>
-              <FaUpload className="upload-icon mb-3" />
-              <h5>Drag & Drop Files Here</h5>
-              <p className="text-muted mb-4">or select files using the buttons below</p>
+              <FaCloudUploadAlt className="upload-icon mb-3" />
+              <h5>Drop Files Into The Bucket</h5>
+              <p className="text-muted mb-4">or choose files using the options below</p>
               
               <div className="d-flex gap-3">
                 <Button 
                   variant="primary" 
                   onClick={() => fileInputRef.current?.click()}
+                  size="lg"
+                  className="px-4"
                 >
                   <FaUpload className="me-2" />
-                  Select Files
+                  Add Files
                 </Button>
                 
                 <Button 
                   variant="outline-primary" 
                   onClick={() => folderInputRef.current?.click()}
+                  size="lg"
+                  className="px-4"
                 >
                   <FaFolderOpen className="me-2" />
-                  Select Folder
+                  Add Folder
                 </Button>
               </div>
               
               <Form.Text className="text-muted mt-3">
-                Supports files up to 50GB in size
+                <strong>Storage Bucket</strong> • Supports files up to 500GB in size
               </Form.Text>
             </>
           )}
@@ -202,7 +206,6 @@ const UploadArea = ({ currentPath, onUploadComplete }) => {
         ref={folderInputRef}
         onChange={handleFileChange}
         style={{ display: 'none' }}
-        directory=""
         webkitdirectory=""
       />
       

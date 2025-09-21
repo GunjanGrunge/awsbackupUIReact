@@ -5,10 +5,11 @@
 }
 
 .upload-dashboard {
-  background: white;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.1);
+  box-shadow: 0 8px 32px rgba(30, 58, 63, 0.1);
   padding: 32px;
+  border: 1px solid rgba(74, 159, 176, 0.1);
 }
 
 .dashboard-header {
@@ -19,12 +20,12 @@
 .dashboard-title {
   font-size: 1.875rem;
   font-weight: 600;
-  color: #1a1f36;
+  color: #1e3a3f;
   margin-bottom: 8px;
 }
 
 .dashboard-subtitle {
-  color: #4f566b;
+  color: #4a9fb0;
   font-size: 1.125rem;
 }
 
@@ -40,11 +41,11 @@
 }
 
 .dropzone-area {
-  border: 2px dashed #007bff;
-  border-radius: 12px;
-  padding: 2rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 2px dashed #4a9fb0;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
   text-align: center;
-  background-color: #f8f9fa;
   cursor: pointer;
   transition: all 0.3s ease;
   height: 100%;
@@ -52,16 +53,31 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: visible;
+  box-shadow: 0 4px 20px rgba(30, 58, 63, 0.1);
+  transform: none;
+}
+
+/* Remove pseudo-elements */
+.dropzone-area::before,
+.dropzone-area::after {
+  display: none;
 }
 
 .dropzone-area:hover {
-  border-color: #0056b3;
-  background-color: #e9ecef;
+  border-color: #3a8a9a;
+  background: linear-gradient(135deg, #f0f8fa 0%, #e6f4f7 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(30, 58, 63, 0.15);
 }
 
 .dropzone-area.active {
-  border-color: #28a745;
-  background-color: #e8f5e9;
+  border-color: #f4c430;
+  border-style: solid;
+  background: linear-gradient(135deg, #fefcf0 0%, #fdf8e6 100%);
+  transform: scale(1.02);
+  box-shadow: 0 8px 30px rgba(244, 196, 48, 0.2);
 }
 
 .dropzone-content {
@@ -69,27 +85,27 @@
   flex-direction: column;
   align-items: center;
   gap: 1rem;
+  position: relative;
+  z-index: 2;
 }
 
 .upload-icon {
-  font-size: 48px !important; /* Ensure consistent size */
+  font-size: 48px !important;
   width: 48px;
   height: 48px;
-  margin-bottom: 1.5rem;
-  transition: transform 0.2s ease;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .folder-icon {
-  color: #f59e0b;
-  filter: drop-shadow(0 2px 4px rgba(245, 158, 11, 0.2));
+  color: #f4c430;
 }
 
 .file-icon {
-  color: #3b82f6;
-  filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.2));
+  color: #4a9fb0;
 }
 
 .dropzone-area:hover .upload-icon {

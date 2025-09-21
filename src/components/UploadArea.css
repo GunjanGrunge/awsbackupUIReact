@@ -1,29 +1,111 @@
 .upload-area {
-  border: 2px dashed #dee2e6;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 2px dashed #4a9fb0;
+  border-radius: 16px;
   transition: all 0.3s ease;
-  background-color: #f8f9fa;
-  min-height: 250px;
+  min-height: 280px;
+  position: relative;
+  overflow: visible;
+  box-shadow: 0 4px 20px rgba(30, 58, 63, 0.1);
+  transform: none;
 }
 
 .upload-area.dragging {
-  border-color: #0d6efd;
-  background-color: #e9effd;
-  transform: scale(1.01);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #f0f8fa 0%, #e6f4f7 100%);
+  border-color: #f4c430;
+  border-style: solid;
+  box-shadow: 0 8px 30px rgba(244, 196, 48, 0.2);
+  transform: scale(1.02);
+}
+
+/* Remove all pseudo-elements for handles and rim */
+.upload-area::before,
+.upload-area::after {
+  display: none;
+}
+
+.upload-area .card-body::after {
+  display: none;
+}
+
+/* Clean button styling with new color palette */
+.upload-area .btn {
+  border-radius: 8px;
+  font-weight: 500;
+  padding: 12px 24px;
+  box-shadow: none;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.upload-area .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 58, 63, 0.15);
+}
+
+.upload-area .btn-primary {
+  background: linear-gradient(135deg, #4a9fb0 0%, #3a8a9a 100%);
+  color: white;
+}
+
+.upload-area .btn-primary:hover {
+  background: linear-gradient(135deg, #3a8a9a 0%, #2a7a8a 100%);
+}
+
+.upload-area .btn-outline-primary {
+  border: 2px solid #4a9fb0;
+  background: white;
+  color: #1e3a3f;
+}
+
+.upload-area .btn-outline-primary:hover {
+  background: #f0f8fa;
+  border-color: #3a8a9a;
+  color: #1e3a3f;
+}
+
+.upload-area .btn-outline-primary:hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  border-color: #1e40af;
 }
 
 .upload-icon {
-  font-size: 3rem;
-  color: #6c757d;
+  font-size: 4rem;
+  color: #6b7280;
+  margin-top: 40px; /* Account for bucket rim */
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.1));
+  transition: all 0.3s ease;
 }
 
 .upload-area.dragging .upload-icon {
-  color: #0d6efd;
+  color: #1d4ed8;
+  transform: scale(1.1);
+  filter: drop-shadow(2px 2px 8px rgba(29, 78, 216, 0.3));
+}
+
+/* Bucket content area styling */
+.upload-area .card-body {
+  padding: 2rem;
+  position: relative;
+  z-index: 2;
 }
 
 .upload-area h5 {
   font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.upload-area .text-muted {
+  color: #6b7280 !important;
+}
+
+.upload-area.dragging h5 {
+  color: #1e40af;
+}
+
+.upload-area.dragging .text-muted {
+  color: #3730a3 !important;
 }
 
 .glacier-badge {
